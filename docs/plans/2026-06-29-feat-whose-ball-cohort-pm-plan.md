@@ -97,13 +97,15 @@ GitHub REST search (server, PAT, batched) -> map to `{title, url, repo, mergedAt
 
 ### Phase 0 — Infrastructure and scaffold (create everything now)
 
-- [ ] `gh repo create gge513/whose-ball --public --source . --remote origin --push` (repo already git-init'd locally).
-- [ ] `create-next-app` into the repo (TS, App Router, Tailwind, ESLint). Keep the existing `docs/`, `README.md`, `.gitignore`.
-- [ ] Auth.js v5 skeleton: `auth.ts`, `app/api/auth/[...nextauth]/route.ts`, a sign-in/out control. Create a GitHub OAuth app (localhost callback `http://localhost:3000/api/auth/callback/github`); `npx auth secret` for `AUTH_SECRET`.
-- [ ] Add Upstash Redis from the Vercel Marketplace (auto-injects `KV_REST_API_URL`/`_TOKEN`); `npm i @upstash/redis`; `lib/redis.ts`.
-- [ ] Import the repo into Vercel; wire env vars (`AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `GITHUB_PAT`, `ANTHROPIC_API_KEY`) for all environments; first deploy to get the `*.vercel.app` URL; add the prod callback URL to the GitHub OAuth app.
-- [ ] `.env.local` with the same keys (confirm git-ignored); never commit secrets.
-- [ ] Seed `data/cohort.json` (George + a few real handles/repos) and snapshot a handful of `data/submissions/*.json` matching the contest schema.
+- [x] Public GitHub repo created and pushed: https://github.com/gge513/whose-ball
+- [x] Next.js 16 (App Router, TS, Tailwind, ESLint) scaffolded over the repo; `docs/`, `README.md`, `.gitignore` preserved.
+- [x] Auth.js v5 code skeleton: `auth.ts` (login-exposing callbacks + safe `getSession`), `app/api/auth/[...nextauth]/route.ts`, server-action sign-in/out control. *(George dashboard step below: create the GitHub OAuth app + `AUTH_SECRET`.)*
+- [x] `npm i @upstash/redis`; `lib/redis.ts` with vote/update helpers that degrade gracefully with no env. *(George dashboard step below: add the Upstash integration in Vercel.)*
+- [ ] **George dashboard step:** import the repo into Vercel; wire env vars (`AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `GITHUB_PAT`, `ANTHROPIC_API_KEY`) for all environments; first deploy to get the `*.vercel.app` URL; add the prod callback URL to the GitHub OAuth app.
+- [x] `.env.local.example` committed with all keys; `.env.local` confirmed git-ignored. *(George: create the real `.env.local` from the example to run locally.)*
+- [x] Seeded `data/cohort.json` (George + 4 real handles) and `data/submissions/*.json` (incl. a `competeForWin:false` case for the filter test).
+
+**Build + lint + dev smoke all pass with zero secrets present** (home renders signed-out, sign-in button live).
 
 ### Phase 1 — Heartbeat spine (deterministic, zero LLM dependency)
 
