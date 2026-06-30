@@ -12,8 +12,10 @@ Agent-native project management for the Cursor build cohort.
 
 ---
 
-**Status:** brainstorm complete, ready to plan. Full design and build order: [`docs/brainstorms/2026-06-29-whose-ball-brainstorm.md`](docs/brainstorms/2026-06-29-whose-ball-brainstorm.md).
+**Status:** code-complete (Phases 0 to 3). Heartbeat, agent draft + posting, and the voting console are built, building, and linting; the app degrades gracefully without secrets. Remaining: Phase 4 (deploy + Loom + submission PR). Design: [`docs/brainstorms/2026-06-29-whose-ball-brainstorm.md`](docs/brainstorms/2026-06-29-whose-ball-brainstorm.md) · Plan + progress: [`docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md`](docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md).
 
-**Stack (planned):** Next.js, Claude Agent SDK, GitHub API, GitHub OAuth sign-in, deployed to Vercel.
+**Stack:** Next.js 16, Auth.js v5 (GitHub OAuth), GitHub REST search, `@anthropic-ai/sdk` (claude-haiku-4-5), Upstash Redis, deployed to Vercel.
 
-**Next:** `/ce:plan` against the brainstorm. Build order: GitHub ingestion and deterministic assembly first (no LLM dependency), then the agent-draft layer, then the voting console, then deploy plus Loom.
+**Run locally:** `cp .env.local.example .env.local`, fill the keys, then `npm install && npm run dev`. Works in a degraded mode even with keys missing.
+
+**Resume (Phase 4):** create the GitHub OAuth app + PAT, add Upstash in Vercel, deploy for the live URL, record the Loom, then open a DCO-signed PR to `c2w1pm-submission` adding `gge513.json`. See the plan's Phase 4 + submission checklist.
