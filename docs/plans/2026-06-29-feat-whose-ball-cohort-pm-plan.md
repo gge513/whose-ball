@@ -109,11 +109,13 @@ GitHub REST search (server, PAT, batched) -> map to `{title, url, repo, mergedAt
 
 ### Phase 1 — Heartbeat spine (deterministic, zero LLM dependency)
 
-- [ ] `lib/week.ts`: fixed NY-TZ Mon-Sun window; accept a `?week=` override for the demo so the board is never empty.
-- [ ] `lib/github.ts`: REST search per handle (`is:pr is:merged author:X merged:START..END`), authenticated PAT, concurrency-limited to ~5, mapped to `{title, url, repo, mergedAt}`. **Public repos only** (provenance must resolve for any viewer). Per-handle try/catch so one bad/404 handle yields a "couldn't load" row, never blanks the board.
-- [ ] Snapshot ingestion to `sync:{week}` (do not hit the API on every page load); render shows "last synced" + the week window.
-- [ ] `lib/assemble.ts`: group PRs by repo into the shipped list with PR links; produce the deterministic update text.
-- [ ] `app/page.tsx`: cohort grid (face + handle from cohort/profile data), ball state per builder, shipped list with resolving PR links, explicit quiet-week state, couldn't-load isolation, empty-cohort/empty-board states.
+- [x] `lib/week.ts`: NY-TZ Mon-Sun window on `merged_at` with correct DST offset; `?week=YYYY-MM-DD` override.
+- [x] `lib/github.ts`: REST search per handle, PAT-authenticated (falls back to unauth for local dev), concurrency-pooled to 5, mapped to `{title, url, repo, mergedAt}`, public repos only. Per-handle try/catch yields a "couldn't load" row, never blanks the board.
+- [x] Per-load API caching via Next `fetch` `revalidate: 300` (chosen over Redis `sync:{week}` so the read path needs no Redis); render shows the week window + "as of" time.
+- [x] `lib/assemble.ts`: group PRs by repo, deterministic shipped-list + summary text (no LLM).
+- [x] `app/page.tsx`: cohort grid with avatars, ball-state badge, resolving PR links, explicit quiet-week state, couldn't-load isolation, empty-cohort state.
+
+**Validated live:** all 5 seed members render; real GitHub data (shadcn shipped 5 merged PRs this week); NY window displayed; build + lint pass.
 
 ### Phase 2 — Agent layer (additive, gracefully optional)
 
