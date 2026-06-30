@@ -1,26 +1,140 @@
 @import "tailwindcss";
 
+/*
+  Whose Ball, "live scoreboard / dev terminal" system.
+  Warm near-black court, one sharp signature accent (electric lime = the ball,
+  the thing in play). Monospace for data, a characterful display face for the
+  wordmark and titles. The ball glows where it is live.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --court: #0b0c07;
+  --court-2: #0e1009;
+  --panel: #14160d;
+  --panel-2: #1a1d11;
+  --line: #282c19;
+  --line-soft: #1e2113;
+  --ink: #edeee2;
+  --muted: #8d9279;
+  --faint: #565b46;
+
+  --ball: #c8f522; /* signature lime, the ball in play */
+  --ball-deep: #9bd400;
+  --posted: #5fd0a8; /* handed off, resolved */
+  --amber: #e6a83f; /* could not load */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-court: var(--court);
+  --color-court-2: var(--court-2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-ball: var(--ball);
+  --color-ball-deep: var(--ball-deep);
+  --color-posted: var(--posted);
+  --color-amber: var(--amber);
+
+  --font-display: var(--ff-display);
+  --font-mono: var(--ff-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--court);
+  background-image:
+    radial-gradient(
+      55rem 26rem at 50% -8%,
+      rgba(200, 245, 34, 0.07),
+      transparent 70%
+    ),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size:
+    auto,
+    44px 44px,
+    44px 44px;
+  background-attachment: fixed;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--ball);
+  color: #0b0c07;
+}
+
+/* The ball glyph: a glowing token where possession sits. */
+.ball-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  background: var(--ball);
+  box-shadow:
+    0 0 0 0 rgba(200, 245, 34, 0.55),
+    0 0 12px 1px rgba(200, 245, 34, 0.55);
+  animation: ballPulse 2.4s ease-out infinite;
+}
+
+@keyframes ballPulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(200, 245, 34, 0.5),
+      0 0 12px 1px rgba(200, 245, 34, 0.45);
+  }
+  70% {
+    box-shadow:
+      0 0 0 7px rgba(200, 245, 34, 0),
+      0 0 12px 1px rgba(200, 245, 34, 0.45);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(200, 245, 34, 0),
+      0 0 12px 1px rgba(200, 245, 34, 0.45);
+  }
+}
+
+/* Staggered card reveal on load. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal {
+  opacity: 0;
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Scoreboard label: tiny, tracked-out mono. */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Card hover lift. */
+.card {
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    background-color 0.18s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line);
 }

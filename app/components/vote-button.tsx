@@ -26,38 +26,44 @@ export function VoteButton({
 
   function vote() {
     if (!signedIn) {
-      setNote("Sign in to vote");
+      setNote("sign in to vote");
       return;
     }
     setNote(null);
     startTransition(async () => {
       const r = await toggleVoteAction(submissionId);
       if (!r.ok) {
-        setNote("Sign in to vote");
+        setNote("sign in to vote");
         return;
       }
       setCount(r.count);
       setVoted(r.voted);
-      if (!r.configured) setNote("not persisted (add Upstash)");
+      if (!r.configured) setNote("not persisted");
     });
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex flex-col items-center gap-1">
       <button
         onClick={vote}
         disabled={isPending}
         aria-pressed={voted}
-        className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition disabled:opacity-50 ${
+        className={`flex w-16 flex-col items-center gap-0.5 rounded-lg border px-3 py-2 transition disabled:opacity-50 ${
           voted
-            ? "border-emerald-600 bg-emerald-950 text-emerald-300"
-            : "border-neutral-700 text-neutral-200 hover:bg-neutral-800"
+            ? "border-ball bg-ball/10 text-ball shadow-[0_0_16px_-2px_rgba(200,245,34,0.45)]"
+            : "border-line text-muted hover:border-ball/60 hover:text-ink"
         }`}
       >
-        <span aria-hidden>{voted ? "▲" : "△"}</span>
-        <span className="tabular-nums">{count}</span>
+        <span aria-hidden className="text-sm leading-none">
+          {voted ? "▲" : "△"}
+        </span>
+        <span className="font-mono text-base font-bold tabular-nums leading-none">
+          {count}
+        </span>
       </button>
-      {note && <span className="text-xs text-amber-400/80">{note}</span>}
+      {note && (
+        <span className="font-mono text-[0.65rem] text-amber">{note}</span>
+      )}
     </div>
   );
 }

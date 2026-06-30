@@ -43,11 +43,12 @@ export function MyUpdate({
       const data = (await res.json()) as { text: string; fallback?: boolean };
       setText(data.text);
       setEditing(true);
-      if (data.fallback) setNote("Drafted without the agent (no API key). Edit and post directly.");
+      if (data.fallback)
+        setNote("drafted without the agent (no API key). edit and post.");
     } catch {
       setText(assembledText);
       setEditing(true);
-      setNote("Agent unavailable. Your shipped list is ready to post.");
+      setNote("agent unavailable. your shipped list is ready to post.");
     } finally {
       setDrafting(false);
     }
@@ -57,28 +58,30 @@ export function MyUpdate({
     startTransition(async () => {
       const r = await postUpdateAction(week, text);
       if (!r.ok) {
-        setNote("Sign in to post your update.");
+        setNote("sign in to post your update.");
         return;
       }
       setPosted(true);
       setEditing(false);
-      if (!r.configured) setNote("Posted for this session (add Upstash to persist).");
+      if (!r.configured) setNote("posted for this session (add Upstash to persist).");
     });
   }
 
+  const btn =
+    "rounded-md px-3 py-1.5 font-mono text-xs transition disabled:opacity-50";
+
   return (
-    <div className="mt-4 rounded-md border border-neutral-700 bg-neutral-900/60 p-3">
-      <div className="mb-2 flex items-center gap-2 text-xs">
-        <span className="rounded bg-white px-1.5 py-0.5 font-medium text-black">
-          your ball
+    <div className="mt-4 rounded-lg border border-ball/30 bg-court-2 p-3.5 shadow-[inset_0_0_24px_-12px_rgba(200,245,34,0.25)]">
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className={posted ? "h-2.5 w-2.5 rounded-full bg-posted" : "ball-dot"} />
+        <span className="kicker text-ball">your ball</span>
+        <span className="font-mono text-[0.7rem] text-muted">
+          {posted
+            ? "posted, editable until Friday"
+            : quiet
+              ? "nothing to report yet"
+              : "on you until you post it"}
         </span>
-        {posted ? (
-          <span className="text-emerald-400">posted</span>
-        ) : (
-          <span className="text-neutral-400">
-            {quiet ? "nothing to report yet" : "not posted yet"}
-          </span>
-        )}
       </div>
 
       {editing ? (
@@ -86,28 +89,33 @@ export function MyUpdate({
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
-          className="w-full resize-y rounded border border-neutral-700 bg-neutral-950 p-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+          autoFocus
+          className="w-full resize-y rounded-md border border-line bg-court p-2.5 font-mono text-sm text-ink outline-none transition-colors focus:border-ball"
         />
       ) : (
-        <p className="text-sm text-neutral-300">
+        <p className="text-sm leading-relaxed text-ink/90">
           {text || "No merged PRs this week."}
         </p>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {!editing && !quiet && (
           <button
             onClick={passToAgent}
             disabled={drafting}
-            className="rounded border border-neutral-700 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-800 disabled:opacity-50"
+            className={`${btn} border border-line text-ink hover:border-ball/60`}
           >
-            {drafting ? "drafting..." : posted ? "redraft with agent" : "pass to agent"}
+            {drafting
+              ? "drafting..."
+              : posted
+                ? "redraft with agent"
+                : "pass to agent"}
           </button>
         )}
         {!editing && !quiet && (
           <button
             onClick={() => setEditing(true)}
-            className="rounded border border-neutral-700 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-800"
+            className={`${btn} border border-line-soft text-muted hover:text-ink`}
           >
             edit
           </button>
@@ -116,17 +124,16 @@ export function MyUpdate({
           <button
             onClick={post}
             disabled={isPending}
-            className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className={`${btn} bg-ball font-semibold text-court hover:bg-ball-deep`}
           >
             {isPending ? "posting..." : "approve and post"}
           </button>
         )}
-        {posted && !editing && (
-          <span className="text-xs text-neutral-600">editable until Friday</span>
-        )}
       </div>
 
-      {note && <p className="mt-2 text-xs text-amber-400/80">{note}</p>}
+      {note && (
+        <p className="mt-2 font-mono text-[0.7rem] text-amber">{note}</p>
+      )}
     </div>
   );
 }

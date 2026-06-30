@@ -2,8 +2,6 @@ import { signIn, signOut, getSession } from "@/auth";
 
 /**
  * Server-component sign-in / sign-out control using Auth.js v5 server actions.
- * No client SessionProvider needed: session is read server-side and the
- * forms post to the signIn / signOut actions.
  */
 export async function AuthButtons() {
   const session = await getSession();
@@ -18,12 +16,12 @@ export async function AuthButtons() {
         }}
         className="flex items-center gap-3"
       >
-        <span className="text-sm text-neutral-400">@{label}</span>
+        <span className="font-mono text-xs text-muted">@{label}</span>
         <button
           type="submit"
-          className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800"
+          className="rounded-md border border-line-soft px-3 py-1.5 font-mono text-xs text-muted transition-colors hover:border-line hover:text-ink"
         >
-          Sign out
+          sign out
         </button>
       </form>
     );
@@ -38,9 +36,10 @@ export async function AuthButtons() {
     >
       <button
         type="submit"
-        className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-black hover:bg-neutral-200"
+        className="group flex items-center gap-2 rounded-md border border-line bg-panel px-3.5 py-1.5 font-mono text-xs font-medium text-ink transition-colors hover:border-ball"
       >
-        Sign in with GitHub
+        <span className="h-1.5 w-1.5 rounded-full bg-ball transition-shadow group-hover:shadow-[0_0_8px_1px_rgba(200,245,34,0.6)]" />
+        sign in with GitHub
       </button>
     </form>
   );
