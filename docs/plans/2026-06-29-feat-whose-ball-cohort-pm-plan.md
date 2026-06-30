@@ -119,16 +119,16 @@ GitHub REST search (server, PAT, batched) -> map to `{title, url, repo, mergedAt
 
 ### Phase 2 — Agent layer (additive, gracefully optional)
 
-- [ ] `app/api/draft/route.ts`: Anthropic Haiku single-shot from the assembled PR list. No `ANTHROPIC_API_KEY` or any failure/timeout -> return the deterministic fallback text, never 500.
-- [ ] "Pass to agent" -> `agent-drafting` -> `draft-ready`; user edits; approve -> `postUpdate` (server action) -> `posted`, persisted, editable until Friday.
-- [ ] If LLM unavailable, the deterministic list is still postable; the agent button shows "drafting unavailable, post your shipped list directly." Loom line: "the agent only drafts from your real merged PRs, and you approve before it posts."
+- [x] `app/api/draft/route.ts`: Haiku single-shot from the assembled PR list; no key / error / 15s timeout returns deterministic fallback (`fallback:true`), never 500. Verified: fallback returns correct text.
+- [x] `app/components/my-update.tsx` (client) + `postUpdateAction`: pass-to-agent -> editable draft -> approve and post -> `posted`, persisted to Redis (keyed on the authed login), editable until Friday.
+- [x] LLM-unavailable path: deterministic text stays editable/postable; the button surfaces "drafted without the agent." Ball reaches posted with zero LLM.
 
 ### Phase 3 — Friday voting console
 
-- [ ] `app/vote/page.tsx`: load `data/submissions/*.json`; per-file try/catch (skip-and-log a malformed file, render the rest); filter `competeForWin === true` (strict). Field fallbacks: missing photo -> initials avatar; missing loom/live -> hide that link (no dead button); missing pitch -> repo name.
-- [ ] `toggleVote` server action -> Redis Set keyed on the authenticated GitHub user id; unique by construction; toggle decrements; count = `SCARD`. Self-vote allowed and shown honestly. Count reflects committed server state (no optimistic drift on failed write).
-- [ ] Voting requires sign-in; logged-out users can view; the upvote action prompts sign-in. Empty states: zero submissions, zero votes.
-- [ ] [CUT-FIRST] Optional agent-prepped voting digest. Ship without it if Friday is tight.
+- [x] `app/vote/page.tsx` + `lib/submissions.ts`: per-file try/catch (malformed skipped), strict `competeForWin === true` filter, field fallbacks (missing photo -> initials, missing link -> hidden, missing pitch -> repo). Verified: `notcompeting` excluded, 2 competing cards render.
+- [x] `toggleVoteAction` -> Redis Set keyed on authed login; unique by construction; toggle decrements; count = `SCARD`. Self-vote allowed. `app/components/vote-button.tsx` shows committed server count (no optimistic drift).
+- [x] Voting requires sign-in; logged-out can view; upvote prompts sign-in. Empty states for zero submissions / zero votes.
+- [ ] [CUT] Optional agent-prepped voting digest. Deliberately deferred (first cut for Friday).
 
 ### Phase 4 — Ship the submission
 
