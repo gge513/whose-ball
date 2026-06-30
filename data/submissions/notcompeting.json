@@ -1,0 +1,10 @@
+{
+  "githubHandle": "notcompeting",
+  "name": "Not Competing",
+  "photoUrl": "",
+  "repoUrl": "https://github.com/notcompeting/week-1-build",
+  "liveUrl": "",
+  "loomUrl": "",
+  "pitch": "Submitted but not trying to win. Used to verify the voting console excludes competeForWin:false entries.",
+  "competeForWin": false
+}
