@@ -12,7 +12,7 @@ Agent-native project management for the Cursor build cohort.
 
 ---
 
-**Status:** code-complete (Phases 0 to 3). Heartbeat, agent draft + posting, and the voting console are built, building, and linting; the app degrades gracefully without secrets. Remaining: Phase 4 (deploy + Loom + submission PR). Design: [`docs/brainstorms/2026-06-29-whose-ball-brainstorm.md`](docs/brainstorms/2026-06-29-whose-ball-brainstorm.md) · Plan + progress: [`docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md`](docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md).
+**Status:** v1 (Phases 0 to 3) built for the summer C2 contest, which closed Jul 3 before we submitted. Now evolving to **v2** for the pilot's Project 1: the verified requirements make v1 ineligible as-is (no task board baseline), so v2 = real task board core + the GitHub-native layers as differentiators. **Start here: [`docs/plans/2026-07-12-pilot-v2-requirements-delta.md`](docs/plans/2026-07-12-pilot-v2-requirements-delta.md)** (has the build-state cursor). v1 design: [`docs/brainstorms/2026-06-29-whose-ball-brainstorm.md`](docs/brainstorms/2026-06-29-whose-ball-brainstorm.md) · v1 plan: [`docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md`](docs/plans/2026-06-29-feat-whose-ball-cohort-pm-plan.md).
 
 **Stack:** Next.js 16, Auth.js v5 (GitHub OAuth), GitHub REST search, `@anthropic-ai/sdk` (claude-haiku-4-5), Upstash Redis, deployed to Vercel.
 
