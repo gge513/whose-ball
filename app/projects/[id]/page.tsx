@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq, isNull, and } from "drizzle-orm";
 
+import { AdvanceGate } from "@/app/components/advance-gate";
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
@@ -94,20 +95,18 @@ export default async function ProjectPage({
               </span>
             ))}
             {stageIdx < STAGE_ORDER.length - 1 && (
-              <form action={advance}>
-                <button
-                  type="submit"
-                  disabled={project.stage === "define" && !defined}
-                  title={
-                    project.stage === "define" && !defined
-                      ? "Answer the three Define questions first"
-                      : `Advance to ${STAGE_ORDER[stageIdx + 1]}`
-                  }
-                  className="ml-2 rounded border border-line px-2 py-1 font-mono text-[11px] text-muted transition-colors hover:border-ball hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  advance →
-                </button>
-              </form>
+              <AdvanceGate
+                advance={advance}
+                locked={project.stage === "define" && !defined}
+                missing={
+                  [
+                    project.whoBenefits,
+                    project.whatChanges,
+                    project.doneLooksLike,
+                  ].filter((v) => !v).length
+                }
+                nextStage={STAGE_ORDER[stageIdx + 1]}
+              />
             )}
           </div>
         </div>
@@ -181,7 +180,10 @@ export default async function ProjectPage({
         </section>
 
         {/* Define */}
-        <section className="mt-4 rounded border border-line bg-panel p-5">
+        <section
+          id="define-panel"
+          className="mt-4 rounded border border-line bg-panel p-5"
+        >
           <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
             define{" "}
             {defined ? (
