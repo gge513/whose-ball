@@ -107,9 +107,10 @@ export default async function MePage() {
       <SiteHeader active="me" auth={<AuthButtons />} />
 
       <main className="mx-auto max-w-5xl px-6 py-10">
-        {/* Cohort pulse strip: the team, one glance, zero rank */}
+        {/* Cohort pulse strip: the team, one glance, zero rank —
+            clicks through to the full momentum page (ratified decision 4) */}
         <Link
-          href="/projects"
+          href="/momentum"
           className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded border border-line-soft bg-panel px-4 py-2.5 font-mono text-[11px] text-muted transition-colors hover:border-line"
         >
           <span className="uppercase tracking-wide text-faint">cohort pulse</span>

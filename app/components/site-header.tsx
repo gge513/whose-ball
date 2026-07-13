@@ -9,7 +9,7 @@ export function SiteHeader({
   active,
   auth,
 }: {
-  active: "heartbeat" | "projects" | "tasks" | "me" | "review";
+  active: "momentum" | "projects" | "tasks" | "me" | "review";
   auth: ReactNode;
 }) {
   const tab = (href: string, label: string, key: string) => (
@@ -41,7 +41,7 @@ export function SiteHeader({
             {tab("/projects", "projects", "projects")}
             {tab("/tasks", "tasks", "tasks")}
             {tab("/review", "review", "review")}
-            {tab("/", "heartbeat", "heartbeat")}
+            {tab("/momentum", "momentum", "momentum")}
           </nav>
         </div>
         {auth}

@@ -15,6 +15,13 @@
       "when": 1783950531894,
       "tag": "0001_salty_valeria_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783982319995,
+      "tag": "0002_hesitant_apocalypse",
+      "breakpoints": true
     }
   ]
 }

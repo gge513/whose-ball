@@ -7,8 +7,40 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { reviews, submissions, users, votes } from "@/lib/db/schema";
+import { emitEvent } from "@/lib/events";
 import { findReviewIssue } from "@/lib/github-reviews";
 import { deepAssignmentsFor } from "@/lib/review-week";
+
+/**
+ * Upsert a review row and, only when it's genuinely new, log the feed
+ * event. Correcting the URL of an already-filed review is paperwork, not
+ * work — the feed records the latter. (Votes never emit anything.)
+ */
+async function saveReview(
+  reviewerId: number,
+  submissionId: number,
+  issueUrl: string,
+  isDeep: boolean
+) {
+  const existing = await db.query.reviews.findFirst({
+    where: and(
+      eq(reviews.reviewerId, reviewerId),
+      eq(reviews.submissionId, submissionId)
+    ),
+  });
+
+  await db
+    .insert(reviews)
+    .values({ reviewerId, submissionId, issueUrl, isDeep })
+    .onConflictDoUpdate({
+      target: [reviews.reviewerId, reviews.submissionId],
+      set: { issueUrl },
+    });
+
+  if (!existing) {
+    await emitEvent({ kind: "review_filed", actorId: reviewerId });
+  }
+}
 
 /**
  * File (or correct) your written review of a peer: the GitHub issue URL.
@@ -48,13 +80,7 @@ export async function fileReviewAction(
     eligible.map((s) => s.id)
   ).has(submissionId);
 
-  await db
-    .insert(reviews)
-    .values({ reviewerId: userId, submissionId, issueUrl, isDeep })
-    .onConflictDoUpdate({
-      target: [reviews.reviewerId, reviews.submissionId],
-      set: { issueUrl },
-    });
+  await saveReview(userId, submissionId, issueUrl, isDeep);
 
   revalidatePath("/review");
 }
@@ -92,13 +118,7 @@ export async function detectReviewAction(submissionId: number) {
     eligible.map((s) => s.id)
   ).has(submissionId);
 
-  await db
-    .insert(reviews)
-    .values({ reviewerId: userId, submissionId, issueUrl: result.issueUrl, isDeep })
-    .onConflictDoUpdate({
-      target: [reviews.reviewerId, reviews.submissionId],
-      set: { issueUrl: result.issueUrl },
-    });
+  await saveReview(userId, submissionId, result.issueUrl, isDeep);
 
   revalidatePath("/review");
 }

@@ -7,6 +7,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
+import { emitEvent } from "@/lib/events";
 import { STAGE_ORDER } from "@/lib/stages";
 
 const TASK_STATUSES = [
@@ -38,6 +39,12 @@ export async function createProjectAction(formData: FormData) {
     .values({ name, ownerId: userId })
     .returning({ id: projects.id });
 
+  await emitEvent({
+    kind: "project_created",
+    actorId: userId,
+    projectId: created.id,
+  });
+
   revalidatePath("/projects");
   redirect(`/projects/${created.id}`);
 }
@@ -66,6 +73,9 @@ export async function defineProjectAction(
  * untouched by this.
  */
 export async function advanceStageAction(projectId: number) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
   });
@@ -79,10 +89,18 @@ export async function advanceStageAction(projectId: number) {
     project.whoBenefits && project.whatChanges && project.doneLooksLike;
   if (leavingDefine && !defined) return; // the gate
 
+  const nextStage = STAGE_ORDER[idx + 1];
   await db
     .update(projects)
-    .set({ stage: STAGE_ORDER[idx + 1], updatedAt: new Date() })
+    .set({ stage: nextStage, updatedAt: new Date() })
     .where(eq(projects.id, projectId));
+
+  await emitEvent({
+    kind: "stage_advanced",
+    actorId: userId,
+    projectId,
+    detail: nextStage,
+  });
 
   revalidatePath(`/projects/${projectId}`);
 }
@@ -136,8 +154,18 @@ export async function moveTaskAction(
   projectId: number,
   formData: FormData
 ) {
+  // The feed needs to say WHO moved it, which surfaced that this action
+  // never asked. Attribution forces authentication.
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   const status = str(formData, "status") as TaskStatus | null;
   if (!status || !TASK_STATUSES.includes(status)) return;
+
+  const before = await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+  });
+  if (!before || before.status === status) return;
 
   if (status === "blocked") {
     const whatTried = str(formData, "blockedWhatTried");
@@ -168,6 +196,34 @@ export async function moveTaskAction(
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId));
+  }
+
+  // One transition, at most one feed line. Done and blocked/unblocked are
+  // the states someone else can feel; the rest is private motion.
+  if (status === "done") {
+    await emitEvent({
+      kind: "task_done",
+      actorId: userId,
+      projectId,
+      taskId,
+      detail: before.title,
+    });
+  } else if (status === "blocked") {
+    await emitEvent({
+      kind: "blocker_raised",
+      actorId: userId,
+      projectId,
+      taskId,
+      detail: before.title,
+    });
+  } else if (before.status === "blocked") {
+    await emitEvent({
+      kind: "blocker_cleared",
+      actorId: userId,
+      projectId,
+      taskId,
+      detail: before.title,
+    });
   }
 
   revalidatePath(`/projects/${projectId}`);

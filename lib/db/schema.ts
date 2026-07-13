@@ -126,6 +126,36 @@ export const votes = pgTable(
   (t) => [unique().on(t.voterId, t.submissionId)]
 );
 
+// The moments that matter, as a fixed list: anything else is not a feed
+// event. Votes are deliberately absent — the ballot is private and no
+// event may ever leak that it happened.
+export const eventKind = pgEnum("event_kind", [
+  "project_created",
+  "stage_advanced",
+  "task_done",
+  "blocker_raised",
+  "blocker_cleared",
+  "review_filed",
+  "submission_merged",
+]);
+
+// Append-only shipping log. State tables answer "where are things now";
+// this table answers "what happened, when" — the momentum feed and the
+// weekly narrative both read from it. Rows are never updated or deleted.
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  kind: eventKind("kind").notNull(),
+  actorId: integer("actor_id")
+    .references(() => users.id)
+    .notNull(),
+  projectId: integer("project_id").references(() => projects.id),
+  taskId: integer("task_id").references(() => tasks.id),
+  // Snapshot text for the feed line (a stage name, a task title): the feed
+  // stays readable even after the object is archived or renamed.
+  detail: text("detail"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id")
