@@ -1,24 +1,105 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
 /**
- * Auth.js v5 config (App Router native).
- * GitHub provider auto-reads AUTH_GITHUB_ID / AUTH_GITHUB_SECRET from env.
- * The jwt + session callbacks expose the GitHub login (handle), which the
- * default session does not carry, so the app can key votes and the heartbeat
- * on the signed-in user's GitHub identity.
+ * Auth.js v5, two doors into the same users table:
+ *  - GitHub OAuth (cohort members all have GitHub by definition)
+ *  - Email + password (open registration; the staff test account signs in
+ *    this way per the pilot's account-model requirement)
+ *
+ * Both resolve to a row in `users`; the row id rides the JWT as dbUserId so
+ * server actions attribute work to a real foreign-keyable user.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [GitHub],
+  providers: [
+    GitHub,
+    Credentials({
+      credentials: { email: {}, password: {} },
+      async authorize(creds) {
+        const email = String(creds?.email ?? "")
+          .toLowerCase()
+          .trim();
+        const password = String(creds?.password ?? "");
+        if (!email || !password) return null;
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, email),
+        });
+        // Same null for "no such user" and "wrong password": sign-in
+        // errors must not reveal which emails have accounts.
+        if (!user?.passwordHash) return null;
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        if (!ok) return null;
+
+        return { id: String(user.id), name: user.name, email: user.email };
+      },
+    }),
+  ],
   callbacks: {
-    async jwt({ token, profile }) {
-      const login = (profile as { login?: string } | undefined)?.login;
-      if (login) token.login = login;
+    async jwt({ token, user, account, profile }) {
+      if (account?.provider === "github" && profile) {
+        const p = profile as {
+          login?: string;
+          name?: string | null;
+          email?: string | null;
+          avatar_url?: string | null;
+        };
+        const login = p.login;
+        if (login) {
+          token.login = login;
+          try {
+            const [row] = await db
+              .insert(users)
+              .values({
+                githubLogin: login,
+                name: p.name ?? login,
+                email: p.email ?? null,
+                avatarUrl: p.avatar_url ?? null,
+              })
+              .onConflictDoUpdate({
+                target: users.githubLogin,
+                set: {
+                  // Never clobber an existing name with the login fallback:
+                  // only update when GitHub actually has a display name.
+                  ...(p.name ? { name: p.name } : {}),
+                  avatarUrl: p.avatar_url ?? null,
+                },
+              })
+              .returning({ id: users.id });
+            token.dbUserId = row.id;
+          } catch {
+            // Rare edge: the GitHub email already belongs to a
+            // password account. Link GitHub onto that row instead.
+            if (p.email) {
+              const existing = await db.query.users.findFirst({
+                where: eq(users.email, p.email),
+              });
+              if (existing) {
+                await db
+                  .update(users)
+                  .set({ githubLogin: login, avatarUrl: p.avatar_url ?? null })
+                  .where(eq(users.id, existing.id));
+                token.dbUserId = existing.id;
+              }
+            }
+          }
+        }
+      }
+      if (account?.provider === "credentials" && user?.id) {
+        token.dbUserId = Number(user.id);
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.login) {
-        session.user.login = token.login as string;
+      if (session.user) {
+        if (token.login) session.user.login = token.login as string;
+        if (token.dbUserId) session.user.dbUserId = token.dbUserId as number;
       }
       return session;
     },
