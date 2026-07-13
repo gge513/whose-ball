@@ -4,13 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, isNull } from "drizzle-orm";
 
+import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
 import { STAGE_ORDER } from "@/lib/stages";
-
-// Session A actor: everything acts as user 1 (George) until Session B wires
-// the auth session to the users table.
-const ACTING_USER_ID = 1;
 
 const TASK_STATUSES = [
   "todo",
@@ -30,12 +27,15 @@ function str(formData: FormData, key: string): string | null {
 
 /** Instant creation: a name is all it takes. The project starts in Define. */
 export async function createProjectAction(formData: FormData) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   const name = str(formData, "name");
   if (!name) return;
 
   const [created] = await db
     .insert(projects)
-    .values({ name, ownerId: ACTING_USER_ID })
+    .values({ name, ownerId: userId })
     .returning({ id: projects.id });
 
   revalidatePath("/projects");
