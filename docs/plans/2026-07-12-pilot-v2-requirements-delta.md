@@ -32,6 +32,23 @@ Source ore: `docs/brainstorms/2026-07-13-motivation-framework-ore.md`. Thesis: `
 
 Parked in ore (operator-phase, post-win): cohort failure-mode interviews, the hypothesis table, the metrics program.
 
+## Live-site reconciliation (2026-07-13, supersedes repo docs where they differ)
+
+Source: https://site-nine-rouge-68.vercel.app/program/phase-1-project-1 (the platform George was admitted to). Where this section conflicts with the repo-doc facts below, THIS wins.
+
+| Fact | Live site (authoritative) | Old assumption (repo docs) |
+| --- | --- | --- |
+| Cohort size | **56 enrolled → 55 reviews + 55 votes** per Phase 1 project | 30 → 29 reviews |
+| Submission | **PR to `rogerSuperBuilderAlpha/hult-cohort-program`**, branch `participants/summer26/phase-1-project-1/{handle}` → target `projects/summer26/phase-1-project-1`, title `[Project 1] Submission — {handle}` | repo `pm-{handle}` in a cohort org |
+| Deploy deadline | **PR merged by Sunday week 1, 17:00 ET** (unmerged = ineligible) | Thu 17:00 |
+| Review window closes | **Monday week 2, 14:00 ET** (no Wed checkpoint mentioned) | Wed 14:00 ≥10, Fri 14:00 all |
+| Review issue title | **`Review by @{me}: @{peer}`** (two handles) | `Review by @{reviewer}` |
+| PR body must include | Production URL · fresh-clone setup · architecture · **motivation/engagement design notes** · known limitations · agent usage | README-centric |
+| Judging emphasis | **"Motivation is the key variable... progress visibility, clear next actions, signals that make people want to ship"** | 5-dimension rubric |
+| Prerequisites | Cursor + Claude Code active (~$400/mo); **Expectations Acknowledgment signed on the dashboard** | — |
+
+Implications for the build: pace math and seed scale should reflect ~55 peers; `lib/github-reviews.ts` title matching must accept the `Review by @{me}: @{peer}` format; `lib/review-week.ts` gets real dates once the dashboard shows them; the PR body's "motivation / engagement design notes" section is THESIS.md's job. Absolute calendar dates for week 1 are still unknown — read them off George's signed-in dashboard. The page also ships an "agent prompt template" for submission day; we use our own flow but its branch/title/body requirements are the contract.
+
 ## Verified sources (all in the public program repo)
 
 | Fact | Source file |

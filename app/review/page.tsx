@@ -82,8 +82,8 @@ export default async function ReviewPage() {
   );
 
   const filed = eligible.filter((s) => reviewFor(s.id)).length;
+  const voted = eligible.filter((s) => voteFor(s.id)).length;
   const required = eligible.length;
-  const wedTarget = Math.min(REVIEW_WEEK.wedMinimum, required);
   const fmt = (d: Date) =>
     d.toLocaleString("en-US", {
       weekday: "short",
@@ -131,16 +131,16 @@ export default async function ReviewPage() {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[11px]">
-            <span className={filed >= wedTarget ? "text-posted" : "text-muted"}>
-              {filed >= wedTarget ? "✓" : "•"} {wedTarget} by{" "}
-              {fmt(REVIEW_WEEK.wedCheckpoint)}
-            </span>
             <span className={filed >= required ? "text-posted" : "text-muted"}>
-              {filed >= required ? "✓" : "•"} all {required} by{" "}
-              {fmt(REVIEW_WEEK.allDue)}
+              {filed >= required ? "✓" : "•"} {required} reviews by{" "}
+              {fmt(REVIEW_WEEK.reviewsAndVotesClose)}
+            </span>
+            <span className={voted >= required ? "text-posted" : "text-muted"}>
+              {voted >= required ? "✓" : "•"} {required} votes by the same
+              close
             </span>
             <span className="text-faint">
-              votes close {fmt(REVIEW_WEEK.votesClose)}
+              submissions merge by {fmt(REVIEW_WEEK.submissionMergeDeadline)}
             </span>
           </div>
         </section>

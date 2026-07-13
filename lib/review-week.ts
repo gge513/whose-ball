@@ -1,19 +1,20 @@
 /**
- * Review-week rhythm from the verified rulebook (peer-review-system.md):
- * Wed 14:00 — at least 10 of 29 reviews due; Fri 14:00 — all due;
- * Fri 16:00 — votes close. Dates provisional until kickoff confirms.
+ * Week 1 rhythm — CONFIRMED from George's signed-in dashboard, 2026-07-13:
+ * submission PR merged by Sun Jul 19 17:00 ET (unmerged = ineligible);
+ * written reviews + private votes due Mon Jul 20 14:00 ET (window closes).
+ * Cohort 59 enrolled → 58 reviews/votes. No Wed checkpoint in the live
+ * rules (that was the retired repo-doc model).
  */
 export const REVIEW_WEEK = {
-  wedCheckpoint: new Date("2026-07-22T18:00:00Z"), // Wed 14:00 ET
-  allDue: new Date("2026-07-24T18:00:00Z"), // Fri 14:00 ET
-  votesClose: new Date("2026-07-24T20:00:00Z"), // Fri 16:00 ET
-  wedMinimum: 10,
+  submissionMergeDeadline: new Date("2026-07-19T21:00:00Z"), // Sun 17:00 EDT
+  reviewsAndVotesClose: new Date("2026-07-20T18:00:00Z"), // Mon 14:00 EDT
 } as const;
 
 /**
- * Deep-review assignments (staff-assigned in the real pilot; deterministic
- * stand-in here): rotate the eligible list by reviewer id, take three.
- * Stable for a given cohort, different per reviewer, never includes self.
+ * Deep-review assignments: in the repo docs staff assigned 3 primary deep
+ * reviews; the live site doesn't mention them. Kept as a soft internal
+ * marker (rotate the eligible list by reviewer id, take three) until the
+ * kickoff call clarifies — harmless if the rule is gone.
  */
 export function deepAssignmentsFor(
   reviewerId: number,
