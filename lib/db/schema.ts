@@ -5,6 +5,8 @@ import {
   text,
   integer,
   timestamp,
+  boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // The six-stage trajectory lives on PROJECTS (ratified: pipeline at project
@@ -70,6 +72,59 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// One contest submission per member. Eligibility = mergedAt set (the
+// rulebook: only merged submission PRs appear on the review/vote list).
+export const submissions = pgTable("submissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull()
+    .unique(),
+  repoUrl: text("repo_url").notNull(),
+  liveUrl: text("live_url"),
+  mergedAt: timestamp("merged_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// A filed written review: the GitHub `Review by @` issue URL, saved here.
+// Saving it is what unlocks the vote for that peer. One review per
+// reviewer per submission, by construction.
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+    reviewerId: integer("reviewer_id")
+      .references(() => users.id)
+      .notNull(),
+    submissionId: integer("submission_id")
+      .references(() => submissions.id)
+      .notNull(),
+    issueUrl: text("issue_url").notNull(),
+    isDeep: boolean("is_deep").default(false).notNull(),
+    filedAt: timestamp("filed_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.reviewerId, t.submissionId)]
+);
+
+// The private ballot: one thumbs per voter per submission, by
+// construction. No query in the UI ever aggregates this table; tallies
+// exist only for the staff export.
+export const votes = pgTable(
+  "votes",
+  {
+    id: serial("id").primaryKey(),
+    voterId: integer("voter_id")
+      .references(() => users.id)
+      .notNull(),
+    submissionId: integer("submission_id")
+      .references(() => submissions.id)
+      .notNull(),
+    thumbsUp: boolean("thumbs_up").notNull(),
+    castAt: timestamp("cast_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.voterId, t.submissionId)]
+);
 
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
