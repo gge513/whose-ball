@@ -9,7 +9,7 @@ export function SiteHeader({
   active,
   auth,
 }: {
-  active: "heartbeat" | "vote";
+  active: "heartbeat" | "vote" | "projects";
   auth: ReactNode;
 }) {
   const tab = (href: string, label: string, key: string) => (
@@ -38,6 +38,7 @@ export function SiteHeader({
           </Link>
           <nav className="flex items-center gap-4">
             {tab("/", "heartbeat", "heartbeat")}
+            {tab("/projects", "projects", "projects")}
             {tab("/vote", "vote", "vote")}
           </nav>
         </div>
