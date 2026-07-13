@@ -6,7 +6,8 @@ import { and, eq, isNotNull } from "drizzle-orm";
 
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { reviews, submissions, votes } from "@/lib/db/schema";
+import { reviews, submissions, users, votes } from "@/lib/db/schema";
+import { findReviewIssue } from "@/lib/github-reviews";
 import { deepAssignmentsFor } from "@/lib/review-week";
 
 /**
@@ -53,6 +54,50 @@ export async function fileReviewAction(
     .onConflictDoUpdate({
       target: [reviews.reviewerId, reviews.submissionId],
       set: { issueUrl },
+    });
+
+  revalidatePath("/review");
+}
+
+/**
+ * Detect a filed review directly from GitHub: looks on the peer's repo for
+ * an issue titled "Review by @{your-login}" and files it if found. The
+ * pasted-URL path stays as the fallback for when GitHub is unreachable.
+ */
+export async function detectReviewAction(submissionId: number) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const me = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!me?.githubLogin) return; // detection needs a GitHub identity
+
+  const submission = await db.query.submissions.findFirst({
+    where: eq(submissions.id, submissionId),
+  });
+  if (!submission || submission.userId === userId || !submission.mergedAt)
+    return;
+
+  const result = await findReviewIssue(submission.repoUrl, me.githubLogin);
+  if (!result.found || !result.issueUrl) {
+    revalidatePath("/review");
+    return;
+  }
+
+  const eligible = await db
+    .select({ id: submissions.id })
+    .from(submissions)
+    .where(isNotNull(submissions.mergedAt));
+  const isDeep = deepAssignmentsFor(
+    userId,
+    eligible.map((s) => s.id)
+  ).has(submissionId);
+
+  await db
+    .insert(reviews)
+    .values({ reviewerId: userId, submissionId, issueUrl: result.issueUrl, isDeep })
+    .onConflictDoUpdate({
+      target: [reviews.reviewerId, reviews.submissionId],
+      set: { issueUrl: result.issueUrl },
     });
 
   revalidatePath("/review");

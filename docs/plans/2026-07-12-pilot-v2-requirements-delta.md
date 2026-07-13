@@ -13,7 +13,7 @@ The June 29 design targeted the summer Cohort 2 Week 1 contest, which has alread
 
 ## Build-state cursor
 
-> **Step:** Session A COMPLETE (2026-07-13): schema live on Neon (users/projects/tasks, two enums), server actions + /projects + /projects/[id] built, Define gate + ball + light blockers working, loop verified by George in the browser (task todo → done). Thesis ratified at `docs/THESIS.md`. Uncommitted in git as of session end. **Next:** Session B — real auth wired to the users table (email+password alongside GitHub OAuth), open registration, PLUS the two baseline items deferred from A: filter views (assignee/status/project) and multi-user assignment. Then the command center. Do not re-derive; resume at Session B in the sequence below.
+> **Step:** Sessions A and B COMPLETE (2026-07-13, committed through `4cb8098`). Live: schema on Neon, task board with Define gate/ball/blockers, two-door auth on one users table (GitHub OAuth app created and verified by George), /tasks filter views, /me command center with cohort pulse. Every baseline feature exists except deployment. **Next:** Session C — the review console + real vote. Part 1: data model (submissions, reviews, votes) with the verified invariants (vote unlocked only by a saved review URL for that peer; no self-review/self-vote; no visible tallies), migration + demo peers seeded. Part 2: the /review console UI (queue, pace vs Wed-14:00/Fri-14:00 lines, deep-review flags, private thumbs) + GitHub `Review by @` issue ingestion. Do not re-derive; resume there.
 
 ## Framework harvest (2026-07-13, all six ratified by George in serial walk-through)
 

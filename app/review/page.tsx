@@ -8,7 +8,11 @@ import { db } from "@/lib/db";
 import { reviews, submissions, users, votes } from "@/lib/db/schema";
 import { deepAssignmentsFor, REVIEW_WEEK } from "@/lib/review-week";
 
-import { castVoteAction, fileReviewAction } from "./actions";
+import {
+  castVoteAction,
+  detectReviewAction,
+  fileReviewAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -148,6 +152,7 @@ export default async function ReviewPage() {
             const vote = voteFor(s.id);
             const isDeep = deepSet.has(s.id);
             const file = fileReviewAction.bind(null, s.id);
+            const detect = detectReviewAction.bind(null, s.id);
             const cast = castVoteAction.bind(null, s.id);
 
             return (
@@ -212,20 +217,31 @@ export default async function ReviewPage() {
                         </a>
                       </p>
                     ) : (
-                      <form action={file} className="flex flex-wrap gap-2">
-                        <input
-                          name="issueUrl"
-                          required
-                          placeholder={`paste your "Review by @" issue URL from their repo`}
-                          className="min-w-72 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-ball focus:outline-none"
-                        />
-                        <button
-                          type="submit"
-                          className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
-                        >
-                          file review
-                        </button>
-                      </form>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <form action={file} className="flex flex-1 flex-wrap gap-2">
+                          <input
+                            name="issueUrl"
+                            required
+                            placeholder={`paste your "Review by @" issue URL from their repo`}
+                            className="min-w-72 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                          >
+                            file review
+                          </button>
+                        </form>
+                        <form action={detect}>
+                          <button
+                            type="submit"
+                            title="Scan their repo for an issue titled Review by @you"
+                            className="rounded border border-line px-3 py-2 font-mono text-xs text-muted hover:border-ball hover:text-ink"
+                          >
+                            detect from GitHub
+                          </button>
+                        </form>
+                      </div>
                     )}
                   </div>
 
