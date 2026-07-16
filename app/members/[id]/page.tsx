@@ -6,6 +6,7 @@ import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
 import { events, projects, users } from "@/lib/db/schema";
+import { chapterTitle, loadNarrative } from "@/lib/narrative";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export default async function MemberPage({
     where: eq(users.id, memberId),
   });
   if (!member) notFound();
+
+  const narrative = await loadNarrative(member);
 
   const [counts] = await db
     .select({
@@ -104,6 +107,33 @@ export default async function MemberPage({
             <span className="mt-1 block font-mono text-[10px] text-faint">
               the unblocked task went on to ship
             </span>
+          </div>
+        </section>
+
+        {/* The weekly narrative (ratified): a composed match report per
+            chapter — own motion, then the connective tissue, then one
+            cohort clause. Third person for every reader (provisional). */}
+        <section className="mt-10">
+          <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
+            the season
+          </h2>
+          <div className="mt-3 space-y-4">
+            {narrative.map((r) => (
+              <article
+                key={r.chapter.index}
+                className="rounded border border-line-soft bg-panel p-5"
+              >
+                <h3 className="font-mono text-[11px] uppercase tracking-wide text-faint">
+                  {chapterTitle(r.chapter)}
+                  {r.chapter.ongoing && (
+                    <span className="text-amber"> · in progress</span>
+                  )}
+                </h3>
+                <p className="mt-2 font-display text-base leading-relaxed text-ink">
+                  {r.paragraph}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 

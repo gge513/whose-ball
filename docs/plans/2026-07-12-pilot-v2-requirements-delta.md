@@ -31,6 +31,8 @@ The June 29 design targeted the summer Cohort 2 Week 1 contest, which has alread
 >
 > **Session D open items (beyond the build itself):** sign the Expectations Acknowledgment on the dashboard (control not yet located — likely post-kickoff); pull the cohort MCP server guide (dashboard references programmatic access to reviews/votes — potential console integration); update `lib/github-reviews.ts` title matching to the live format `Review by @{me}: @{peer}`; ingest the real roster once the submissions branch fills and DELETE the four fake demo peers; note anything the kickoff call changes.
 >
+> **PROVISIONAL — review after George's real live test (flagged 2026-07-16):** weekly-narrative narrator stance locked as third-person-for-every-reader (the witness stance) so the build can move, but the reasoning didn't fully land for George. Revisit with his own page in front of him after he's used it live: does reading your own week in the third person feel like being seen, or like being talked about? If it's the latter, the fallback is second-person-on-your-own-page, and the sentence rules should be written so the subject is swappable without restructuring.
+>
 > **Parked for a future build session (George, 2026-07-13):** Session C flex hardening — paste-path existence verification via the GitHub API, page-load detection sweep across all peers, review-quality signals (150-word/citation checks on issue bodies), staff-only tally export for after votes close.
 
 ## Framework harvest (2026-07-13, all six ratified by George in serial walk-through)
