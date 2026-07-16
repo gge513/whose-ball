@@ -5,8 +5,12 @@ import { asc, eq, isNull, and } from "drizzle-orm";
 import { AdvanceGate } from "@/app/components/advance-gate";
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
+import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
+import { fmtElapsed } from "@/lib/events";
+import { requestNowMs } from "@/lib/journey";
+import { sweepDrops } from "@/lib/rally";
 
 import { STAGE_ORDER } from "@/lib/stages";
 
@@ -14,6 +18,7 @@ import {
   advanceStageAction,
   archiveProjectAction,
   archiveTaskAction,
+  catchBallAction,
   createTaskAction,
   defineProjectAction,
   moveTaskAction,
@@ -33,6 +38,9 @@ export default async function ProjectPage({
   const projectId = Number(id);
   if (Number.isNaN(projectId)) notFound();
 
+  await sweepDrops(); // overdue passes become drops before we render
+
+  const viewerId = await currentDbUserId();
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
   });
@@ -120,10 +128,60 @@ export default async function ProjectPage({
 
         {/* The ball */}
         <section className="mt-6 rounded border border-ball/30 bg-panel p-5">
-          <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
+          <h2 className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-wide text-muted">
             the ball
+            {project.rallyCount > 0 && (
+              <span
+                className="rounded border border-ball/50 px-1.5 py-0.5 text-[10px] text-ball"
+                title="consecutive clean catches on this project"
+              >
+                rally · {project.rallyCount}
+              </span>
+            )}
           </h2>
-          {project.nextAction ? (
+          {project.ballPassedAt ? (
+            <div className="mt-2">
+              <p className="flex items-center gap-2.5 font-display text-lg font-bold text-ink">
+                <span className="ball-dot" />
+                in the air → {nameOf(project.ballHolderId)}
+                <span className="font-mono text-xs font-normal text-muted">
+                  · from {nameOf(project.ballPasserId)} ·{" "}
+                  {fmtElapsed(
+                    (requestNowMs() - project.ballPassedAt.getTime()) / 1000
+                  )}{" "}
+                  up
+                </span>
+              </p>
+              {project.nextAction && (
+                <p className="mt-1 font-mono text-xs text-muted">
+                  the ask: {project.nextAction}
+                </p>
+              )}
+              {viewerId === project.ballHolderId ? (
+                <form
+                  action={catchBallAction.bind(null, project.id)}
+                  className="mt-3 flex flex-wrap gap-2"
+                >
+                  <input
+                    name="firstAction"
+                    required
+                    placeholder="name your first action to catch it"
+                    className="min-w-64 flex-1 rounded border border-ball/40 bg-panel-2 px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded bg-ball px-3 py-2 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+                  >
+                    catch
+                  </button>
+                </form>
+              ) : (
+                <p className="mt-2 font-mono text-[11px] text-faint">
+                  theirs when they catch it — uncaught for 24h is a drop
+                </p>
+              )}
+            </div>
+          ) : project.nextAction ? (
             <p className="mt-2 flex items-center gap-2.5 font-display text-lg font-bold text-ink">
               <span className="ball-dot" />
               {project.nextAction}
@@ -141,7 +199,7 @@ export default async function ProjectPage({
           )}
           <details className="mt-3">
             <summary className="cursor-pointer font-mono text-xs text-muted hover:text-ink">
-              set the ball
+              set or pass the ball
             </summary>
             <form action={setBall} className="mt-3 flex flex-wrap gap-2">
               <input
@@ -175,6 +233,10 @@ export default async function ProjectPage({
               >
                 set
               </button>
+              <p className="w-full font-mono text-[10px] text-faint">
+                picking someone else puts it in the air — it&apos;s theirs
+                when they catch it by naming their first action
+              </p>
             </form>
           </details>
         </section>

@@ -17,6 +17,7 @@ export async function emitEvent(e: {
   projectId?: number;
   taskId?: number;
   detail?: string;
+  elapsedS?: number;
 }) {
   try {
     await db.insert(events).values({
@@ -25,6 +26,7 @@ export async function emitEvent(e: {
       projectId: e.projectId ?? null,
       taskId: e.taskId ?? null,
       detail: e.detail ?? null,
+      elapsedS: e.elapsedS ?? null,
     });
   } catch {
     // The work already happened; losing one feed line is acceptable,
@@ -80,8 +82,26 @@ export type FeedItem = {
   projectId: number | null;
   projectName: string | null;
   detail: string | null;
+  elapsedS: number | null;
   createdAt: Date;
 };
+
+/**
+ * The drop belongs to the project, not a person (ratified: no-fault).
+ * The feed renders these kinds without naming the actor.
+ */
+export const ACTORLESS_KINDS: ReadonlySet<EventKind> = new Set([
+  "ball_dropped",
+] as EventKind[]);
+
+/** Elapsed time in the feed's spoken register ("90 minutes", "5 hours"). */
+export function fmtElapsed(s: number): string {
+  const m = Math.max(1, Math.round(s / 60));
+  if (m < 120) return `${m} minute${m === 1 ? "" : "s"}`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h} hours`;
+  return `${Math.round(h / 24)} days`;
+}
 
 /** The shipping feed: newest first, joined for display, hard-capped. */
 export async function loadFeed(limit = 50): Promise<FeedItem[]> {
@@ -96,6 +116,7 @@ export async function loadFeed(limit = 50): Promise<FeedItem[]> {
       projectId: events.projectId,
       projectName: projects.name,
       detail: events.detail,
+      elapsedS: events.elapsedS,
       createdAt: events.createdAt,
     })
     .from(events)
@@ -111,6 +132,9 @@ export type MomentumTiles = {
   tasksDoneThisWeek: number;
   reviewsFiled: number;
   openHelpRequests: number;
+  // The rally tiles (ratified): collective, display-only, never per person.
+  longestLiveRally: number;
+  medianCatchSecondsThisWeek: number | null;
 };
 
 /**
@@ -149,12 +173,28 @@ export async function loadMomentumTiles(): Promise<MomentumTiles> {
     .from(tasks)
     .where(sql`${tasks.status} = 'blocked' and ${tasks.archivedAt} is null`);
 
+  const [rally] = await db
+    .select({ n: sql<number>`coalesce(max(${projects.rallyCount}), 0)::int` })
+    .from(projects)
+    .where(sql`${projects.archivedAt} is null`);
+
+  const [median] = await db
+    .select({
+      s: sql<number | null>`percentile_cont(0.5) within group (order by ${events.elapsedS})`,
+    })
+    .from(events)
+    .where(
+      sql`${events.kind} = 'ball_caught' and ${events.elapsedS} is not null and ${events.createdAt} >= ${weekAgo}`
+    );
+
   return {
     projectsLive: live.n,
     shipped: shipped.n,
     tasksDoneThisWeek: doneWeek.n,
     reviewsFiled: reviewsFiled.n,
     openHelpRequests: help.n,
+    longestLiveRally: rally.n,
+    medianCatchSecondsThisWeek: median.s === null ? null : Number(median.s),
   };
 }
 
@@ -179,5 +219,14 @@ export function feedLine(item: FeedItem): string {
       return `assisted on "${item.detail}"`;
     case "assist_converted":
       return `assist converted — "${item.detail}" shipped`;
+    case "ball_passed":
+      return `passed the ball to ${item.detail}`;
+    case "ball_caught":
+      return item.elapsedS
+        ? `caught the ball in ${fmtElapsed(item.elapsedS)} — first move: "${item.detail}"`
+        : `caught the ball — first move: "${item.detail}"`;
+    case "ball_dropped":
+      // Actorless by design: the line states what happened, blames no one.
+      return `the ball dropped — 24 hours in the air, no catch`;
   }
 }

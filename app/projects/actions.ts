@@ -6,8 +6,9 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { projects, tasks } from "@/lib/db/schema";
+import { projects, tasks, users } from "@/lib/db/schema";
 import { convertAssistsFor, emitEvent } from "@/lib/events";
+import { RALLY_DROP_MS, sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
 
 const TASK_STATUSES = [
@@ -105,24 +106,116 @@ export async function advanceStageAction(projectId: number) {
   revalidatePath(`/projects/${projectId}`);
 }
 
-/** The ball: one next action, one holder, optional quiet when-commitment. */
+/**
+ * The ball: one next action, one holder, optional quiet when-commitment.
+ * The rally rides on top: giving the ball to someone ELSE is a pass — it
+ * goes in the air, and it's theirs only when they catch it. Keeping it
+ * (yourself, or the same holder) is a plain edit and touches no rally
+ * state.
+ */
 export async function setBallAction(projectId: number, formData: FormData) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   const nextAction = str(formData, "nextAction");
   const holder = str(formData, "ballHolderId");
   const committedFor = str(formData, "committedFor");
+  const holderId = holder ? Number(holder) : null;
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (!project) return;
+
+  const holderChanged = holderId !== project.ballHolderId;
+  const isPass = holderChanged && holderId !== null && holderId !== userId;
 
   await db
     .update(projects)
     .set({
       nextAction,
-      ballHolderId: holder ? Number(holder) : null,
+      ballHolderId: holderId,
       nextActionCommittedFor: committedFor ? new Date(committedFor) : null,
+      // A pass starts the clock; taking it yourself clears any stale air;
+      // an unchanged holder is an edit and leaves the clock alone.
+      ballPassedAt: holderChanged
+        ? isPass
+          ? new Date()
+          : null
+        : project.ballPassedAt,
+      ballPasserId: holderChanged
+        ? isPass
+          ? userId
+          : null
+        : project.ballPasserId,
       updatedAt: new Date(),
     })
     .where(eq(projects.id, projectId));
 
+  if (isPass) {
+    const receiver = await db.query.users.findFirst({
+      where: eq(users.id, holderId),
+    });
+    await emitEvent({
+      kind: "ball_passed",
+      actorId: userId,
+      projectId,
+      detail: receiver?.name ?? "someone",
+    });
+  }
+
   revalidatePath(`/projects/${projectId}`);
   revalidatePath("/projects");
+}
+
+/**
+ * The catch: the pass becomes yours when you name your first action —
+ * one field, and it becomes the project's next action. A catch attempted
+ * past the drop limit registers the drop instead (the ball already hit
+ * the ground; the page just hadn't noticed yet).
+ */
+export async function catchBallAction(projectId: number, formData: FormData) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const firstAction = str(formData, "firstAction");
+  if (!firstAction) return;
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (!project || project.archivedAt) return;
+  if (!project.ballPassedAt || project.ballHolderId !== userId) return;
+
+  const elapsedMs = Date.now() - project.ballPassedAt.getTime();
+  if (elapsedMs > RALLY_DROP_MS) {
+    await sweepDrops();
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath("/me");
+    return;
+  }
+
+  await db
+    .update(projects)
+    .set({
+      nextAction: firstAction,
+      ballPassedAt: null,
+      ballPasserId: null,
+      rallyCount: project.rallyCount + 1,
+      updatedAt: new Date(),
+    })
+    .where(eq(projects.id, projectId));
+
+  await emitEvent({
+    kind: "ball_caught",
+    actorId: userId,
+    projectId,
+    detail: firstAction,
+    elapsedS: Math.max(1, Math.floor(elapsedMs / 1000)),
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/me");
 }
 
 export async function createTaskAction(

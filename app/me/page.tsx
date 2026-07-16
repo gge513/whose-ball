@@ -4,9 +4,13 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
+import { catchBallAction } from "@/app/projects/actions";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
+import { fmtElapsed } from "@/lib/events";
+import { requestNowMs } from "@/lib/journey";
+import { sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +49,23 @@ export default async function MePage() {
     );
   }
 
+  await sweepDrops(); // overdue passes become drops before we render
+
   const [me] = await db.select().from(users).where(eq(users.id, userId));
 
+  const passer = alias(users, "passer");
   const myBalls = await db
-    .select()
+    .select({
+      id: projects.id,
+      name: projects.name,
+      stage: projects.stage,
+      nextAction: projects.nextAction,
+      nextActionCommittedFor: projects.nextActionCommittedFor,
+      ballPassedAt: projects.ballPassedAt,
+      passerName: passer.name,
+    })
     .from(projects)
+    .leftJoin(passer, eq(projects.ballPasserId, passer.id))
     .where(
       and(eq(projects.ballHolderId, userId), isNull(projects.archivedAt))
     )
@@ -95,7 +111,10 @@ export default async function MePage() {
       and(
         eq(projects.ballHolderId, userId),
         ne(projects.ownerId, userId),
-        isNull(projects.archivedAt)
+        isNull(projects.archivedAt),
+        // A pass still in the air isn't held yet — it renders as a catch
+        // card under "your balls", not as possession.
+        isNull(projects.ballPassedAt)
       )
     );
 
@@ -196,31 +215,79 @@ export default async function MePage() {
             </p>
           ) : (
             <ul className="mt-3 space-y-2">
-              {myBalls.map((p) => (
-                <li key={p.id}>
-                  {/* The ball is a button: the next step, and a door into it */}
-                  <Link
-                    href={`/projects/${p.id}`}
-                    className="group flex items-center gap-3 rounded border border-ball/40 bg-panel p-4 transition-all hover:border-ball hover:shadow-[0_0_16px_rgba(200,245,34,0.15)]"
+              {myBalls.map((p) =>
+                p.ballPassedAt ? (
+                  /* A pass in the air for you: not yours until you catch it
+                     by naming your first action (the rally, ratified) */
+                  <li
+                    key={p.id}
+                    className="rounded border border-ball/40 bg-panel p-4"
                   >
-                    <span className="ball-dot shrink-0" />
-                    <span className="flex-1">
-                      <span className="block font-display text-base font-bold text-ink">
-                        {p.nextAction ?? "set the next move"}
+                    <p className="flex items-center gap-3">
+                      <span className="ball-dot shrink-0" />
+                      <span className="flex-1">
+                        <span className="block font-display text-base font-bold text-ink">
+                          {p.passerName ?? "Someone"} passed you the ball
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          <Link
+                            href={`/projects/${p.id}`}
+                            className="hover:text-ball"
+                          >
+                            {p.name}
+                          </Link>
+                          {p.nextAction && ` · the ask: ${p.nextAction}`} · in
+                          the air{" "}
+                          {fmtElapsed(
+                            (requestNowMs() - p.ballPassedAt.getTime()) / 1000
+                          )}
+                        </span>
                       </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                        {p.name} · {p.stage}
-                        {p.nextActionCommittedFor &&
-                          p.nextActionCommittedFor > new Date() &&
-                          ` · committed for ${p.nextActionCommittedFor.toLocaleDateString()}`}
+                    </p>
+                    <form
+                      action={catchBallAction.bind(null, p.id)}
+                      className="mt-3 flex flex-wrap gap-2"
+                    >
+                      <input
+                        name="firstAction"
+                        required
+                        placeholder="name your first action to catch it"
+                        className="min-w-64 flex-1 rounded border border-ball/40 bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                      >
+                        catch
+                      </button>
+                    </form>
+                  </li>
+                ) : (
+                  <li key={p.id}>
+                    {/* The ball is a button: the next step, and a door into it */}
+                    <Link
+                      href={`/projects/${p.id}`}
+                      className="group flex items-center gap-3 rounded border border-ball/40 bg-panel p-4 transition-all hover:border-ball hover:shadow-[0_0_16px_rgba(200,245,34,0.15)]"
+                    >
+                      <span className="ball-dot shrink-0" />
+                      <span className="flex-1">
+                        <span className="block font-display text-base font-bold text-ink">
+                          {p.nextAction ?? "set the next move"}
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          {p.name} · {p.stage}
+                          {p.nextActionCommittedFor &&
+                            p.nextActionCommittedFor > new Date() &&
+                            ` · committed for ${p.nextActionCommittedFor.toLocaleDateString()}`}
+                        </span>
                       </span>
-                    </span>
-                    <span className="font-mono text-xs text-faint transition-colors group-hover:text-ball">
-                      go →
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                      <span className="font-mono text-xs text-faint transition-colors group-hover:text-ball">
+                        go →
+                      </span>
+                    </Link>
+                  </li>
+                )
+              )}
             </ul>
           )}
         </section>

@@ -67,6 +67,15 @@ export const projects = pgTable("projects", {
   // Optional when-commitment; expires quietly, never glares.
   nextActionCommittedFor: timestamp("next_action_committed_for"),
 
+  // The rally (ratified, signature mechanic): a pass puts the ball in the
+  // air — ballPassedAt set means uncaught. It becomes the receiver's only
+  // when they catch it by naming their first action; uncaught for 24h is
+  // a visible, no-fault drop on the project. rallyCount = consecutive
+  // clean catches, reset by a drop. Never surfaced per person.
+  ballPassedAt: timestamp("ball_passed_at"),
+  ballPasserId: integer("ball_passer_id").references(() => users.id),
+  rallyCount: integer("rally_count").default(0).notNull(),
+
   // Archive, never destroy: null = live, set = archived.
   archivedAt: timestamp("archived_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -142,6 +151,9 @@ export const eventKind = pgEnum("event_kind", [
   "submission_merged",
   "assist",
   "assist_converted",
+  "ball_passed",
+  "ball_caught",
+  "ball_dropped",
 ]);
 
 // Append-only shipping log. State tables answer "where are things now";
@@ -158,6 +170,9 @@ export const events = pgTable("events", {
   // Snapshot text for the feed line (a stage name, a task title): the feed
   // stays readable even after the object is archived or renamed.
   detail: text("detail"),
+  // Catch latency in seconds, carried by ball_caught (ratified: witness,
+  // not points — the feed states it, the momentum median tile reads it).
+  elapsedS: integer("elapsed_s"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

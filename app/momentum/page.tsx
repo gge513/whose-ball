@@ -3,7 +3,13 @@ import Link from "next/link";
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { JourneySpine } from "@/app/components/journey-header";
 import { SiteHeader } from "@/app/components/site-header";
-import { feedLine, loadFeed, loadMomentumTiles } from "@/lib/events";
+import {
+  ACTORLESS_KINDS,
+  feedLine,
+  loadFeed,
+  loadMomentumTiles,
+} from "@/lib/events";
+import { sweepDrops } from "@/lib/rally";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +18,15 @@ export const dynamic = "force-dynamic";
  * Two ideas, deliberately absent: per-person counts and any ordering of
  * people. Movement is public; comparison does not exist here.
  */
+
+/** Tile-sized elapsed time ("90m", "5h") — the feed speaks in full words. */
+function shortElapsed(s: number): string {
+  const m = Math.max(1, Math.round(s / 60));
+  if (m < 120) return `${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h}h`;
+  return `${Math.round(h / 24)}d`;
+}
 
 function ago(d: Date): string {
   const s = Math.max(1, Math.floor((Date.now() - d.getTime()) / 1000));
@@ -34,12 +49,22 @@ const KIND_COLOR: Record<string, string> = {
   blocker_cleared: "text-ball",
   assist: "text-posted",
   assist_converted: "text-ball",
+  ball_passed: "text-ink",
+  ball_caught: "text-ball",
+  ball_dropped: "text-amber",
 };
 
 export default async function MomentumPage() {
+  await sweepDrops(); // overdue passes become drops before we render
+
   const [tiles, feed] = await Promise.all([loadMomentumTiles(), loadFeed(50)]);
 
-  const tileDefs = [
+  const tileDefs: {
+    label: string;
+    value: number | string;
+    href: string;
+    warm?: boolean;
+  }[] = [
     { label: "projects live", value: tiles.projectsLive, href: "/projects" },
     { label: "shipped", value: tiles.shipped, href: "/projects" },
     {
@@ -48,6 +73,19 @@ export default async function MomentumPage() {
       href: "/tasks?status=done",
     },
     { label: "reviews filed", value: tiles.reviewsFiled, href: "/review" },
+    {
+      label: "longest live rally",
+      value: tiles.longestLiveRally,
+      href: "/projects",
+    },
+    {
+      label: "median catch this week",
+      value:
+        tiles.medianCatchSecondsThisWeek === null
+          ? "—"
+          : shortElapsed(tiles.medianCatchSecondsThisWeek),
+      href: "/projects",
+    },
     {
       label: "asking for help",
       value: tiles.openHelpRequests,
@@ -79,20 +117,20 @@ export default async function MomentumPage() {
         </section>
 
         {/* Collective tiles: totals only, every one a door into the work */}
-        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {tileDefs.map((t) => (
             <Link
               key={t.label}
               href={t.href}
               className={`rounded border bg-panel p-4 transition-colors ${
-                t.warm && t.value > 0
+                t.warm && Number(t.value) > 0
                   ? "border-amber/40 hover:border-amber"
                   : "border-line-soft hover:border-line"
               }`}
             >
               <span
                 className={`block font-display text-3xl font-extrabold ${
-                  t.warm && t.value > 0 ? "text-amber" : "text-ink"
+                  t.warm && Number(t.value) > 0 ? "text-amber" : "text-ink"
                 }`}
               >
                 {t.value}
@@ -128,12 +166,16 @@ export default async function MomentumPage() {
                     ●
                   </span>
                   <span className="flex-1 font-mono text-sm text-ink">
-                    <Link
-                      href={`/members/${item.actorId}`}
-                      className="font-bold hover:text-ball"
-                    >
-                      {item.actorName}
-                    </Link>{" "}
+                    {!ACTORLESS_KINDS.has(item.kind) && (
+                      <>
+                        <Link
+                          href={`/members/${item.actorId}`}
+                          className="font-bold hover:text-ball"
+                        >
+                          {item.actorName}
+                        </Link>{" "}
+                      </>
+                    )}
                     <span className="text-muted">{feedLine(item)}</span>
                     {item.projectId &&
                       item.kind !== "project_created" &&
