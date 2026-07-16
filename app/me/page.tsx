@@ -4,7 +4,12 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
-import { catchBallAction } from "@/app/projects/actions";
+import {
+  catchBallAction,
+  pickWhistleCauseAction,
+  pickupDefineAction,
+  pickupEvidenceAction,
+} from "@/app/projects/actions";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
@@ -12,6 +17,12 @@ import { fmtElapsed } from "@/lib/events";
 import { requestNowMs } from "@/lib/journey";
 import { sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
+import {
+  WHISTLE_CAUSES,
+  WHISTLE_STILL_HOURS,
+  sweepWhistles,
+  type WhistleCause,
+} from "@/lib/whistle";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +61,7 @@ export default async function MePage() {
   }
 
   await sweepDrops(); // overdue passes become drops before we render
+  await sweepWhistles(); // then still balls get whistled (drops reset the clock)
 
   const [me] = await db.select().from(users).where(eq(users.id, userId));
 
@@ -62,6 +74,8 @@ export default async function MePage() {
       nextAction: projects.nextAction,
       nextActionCommittedFor: projects.nextActionCommittedFor,
       ballPassedAt: projects.ballPassedAt,
+      whistleBlownAt: projects.whistleBlownAt,
+      whistleCause: projects.whistleCause,
       passerName: passer.name,
     })
     .from(projects)
@@ -261,6 +275,137 @@ export default async function MePage() {
                         catch
                       </button>
                     </form>
+                  </li>
+                ) : p.whistleBlownAt ? (
+                  /* The pickup card (the dead-ball whistle, ratified):
+                     public whistle, private cause. One tap names why the
+                     ball is still; the remedy matches the cause. Inline
+                     remedies clear it right here, like the catch;
+                     multi-field remedies route to the real form and the
+                     whistle stands until the artifact exists. */
+                  <li
+                    key={p.id}
+                    className="rounded border border-amber/40 bg-panel p-4"
+                  >
+                    <p className="flex items-center gap-3">
+                      <span className="ball-dot shrink-0 opacity-50" />
+                      <span className="flex-1">
+                        <span className="block font-display text-base font-bold text-amber">
+                          the whistle blew — this ball&apos;s been still for{" "}
+                          {/* stillness started a full whistle-window before
+                              the whistle itself blew */}
+                          {fmtElapsed(
+                            (requestNowMs() - p.whistleBlownAt.getTime()) /
+                              1000 +
+                              WHISTLE_STILL_HOURS * 3600
+                          )}
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          <Link
+                            href={`/projects/${p.id}`}
+                            className="hover:text-ball"
+                          >
+                            {p.name}
+                          </Link>
+                          {p.nextAction && ` · the ball: ${p.nextAction}`}
+                        </span>
+                      </span>
+                    </p>
+
+                    {!p.whistleCause ? (
+                      <div className="mt-3">
+                        <p className="font-mono text-[11px] text-muted">
+                          why is it still?
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {(
+                            Object.keys(WHISTLE_CAUSES) as WhistleCause[]
+                          ).map((c) => (
+                            <form
+                              key={c}
+                              action={pickWhistleCauseAction.bind(null, p.id)}
+                            >
+                              <input type="hidden" name="cause" value={c} />
+                              <button
+                                type="submit"
+                                className="rounded border border-amber/40 px-3 py-1.5 font-mono text-xs text-ink transition-colors hover:border-amber hover:text-amber"
+                              >
+                                {WHISTLE_CAUSES[c].label}
+                              </button>
+                            </form>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+                        {WHISTLE_CAUSES[p.whistleCause].mode ===
+                        "inline_define" ? (
+                          <form
+                            action={pickupDefineAction.bind(null, p.id)}
+                            className="flex flex-wrap gap-2"
+                          >
+                            <input
+                              name="nextAction"
+                              required
+                              placeholder="name the next action to pick it up"
+                              className="min-w-64 flex-1 rounded border border-amber/40 bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-amber focus:outline-none"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                            >
+                              define it
+                            </button>
+                          </form>
+                        ) : WHISTLE_CAUSES[p.whistleCause].mode ===
+                          "inline_evidence" ? (
+                          <form
+                            action={pickupEvidenceAction.bind(null, p.id)}
+                            className="flex flex-wrap gap-2"
+                          >
+                            <input
+                              name="evidenceUrl"
+                              type="url"
+                              required
+                              placeholder="link the evidence — a PR, an issue, a doc"
+                              className="min-w-64 flex-1 rounded border border-amber/40 bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-amber focus:outline-none"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                            >
+                              link it
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="font-mono text-xs text-muted">
+                            <Link
+                              href={`/projects/${p.id}${
+                                WHISTLE_CAUSES[p.whistleCause].anchor ?? ""
+                              }`}
+                              className="text-amber hover:underline"
+                            >
+                              {WHISTLE_CAUSES[p.whistleCause].remedy} →
+                            </Link>{" "}
+                            <span className="text-faint">
+                              the whistle clears when it exists
+                            </span>
+                          </p>
+                        )}
+                        <form
+                          action={pickWhistleCauseAction.bind(null, p.id)}
+                          className="mt-2"
+                        >
+                          <input type="hidden" name="cause" value="" />
+                          <button
+                            type="submit"
+                            className="font-mono text-[10px] text-faint hover:text-muted"
+                          >
+                            ← different cause
+                          </button>
+                        </form>
+                      </div>
+                    )}
                   </li>
                 ) : (
                   <li key={p.id}>

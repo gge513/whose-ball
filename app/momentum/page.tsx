@@ -10,6 +10,7 @@ import {
   loadMomentumTiles,
 } from "@/lib/events";
 import { sweepDrops } from "@/lib/rally";
+import { sweepWhistles } from "@/lib/whistle";
 
 export const dynamic = "force-dynamic";
 
@@ -52,10 +53,13 @@ const KIND_COLOR: Record<string, string> = {
   ball_passed: "text-ink",
   ball_caught: "text-ball",
   ball_dropped: "text-amber",
+  whistle_blown: "text-amber",
+  ball_picked_up: "text-ball",
 };
 
 export default async function MomentumPage() {
   await sweepDrops(); // overdue passes become drops before we render
+  await sweepWhistles(); // then still balls get whistled (drops reset the clock)
 
   const [tiles, feed] = await Promise.all([loadMomentumTiles(), loadFeed(50)]);
 

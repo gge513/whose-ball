@@ -92,6 +92,9 @@ export type FeedItem = {
  */
 export const ACTORLESS_KINDS: ReadonlySet<EventKind> = new Set([
   "ball_dropped",
+  // The whistle states stillness and blames no one; the private cause
+  // never reaches this table at all.
+  "whistle_blown",
 ] as EventKind[]);
 
 /** Elapsed time in the feed's spoken register ("90 minutes", "5 hours"). */
@@ -228,5 +231,15 @@ export function feedLine(item: FeedItem): string {
     case "ball_dropped":
       // Actorless by design: the line states what happened, blames no one.
       return `the ball dropped — 24 hours in the air, no catch`;
+    case "whistle_blown":
+      // Also actorless: stillness is a fact about the ball, not a verdict
+      // on the holder.
+      return `the whistle blew — the ball's been still for 48 hours`;
+    case "ball_picked_up":
+      // detail is the named next move, the first cut of a split, or an
+      // evidence URL — URLs stay out of the spoken line.
+      return item.detail && !item.detail.startsWith("http")
+        ? `picked the ball back up — next move: "${item.detail}"`
+        : `picked the ball back up`;
   }
 }

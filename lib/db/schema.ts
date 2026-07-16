@@ -24,6 +24,17 @@ export const projectStage = pgEnum("project_stage", [
 // Tasks ride the light flow. "blocked" is a real state (ratified: light
 // blocker model), entered only with its three fields filled in — that rule
 // is enforced in the server action, not here.
+// The dead-ball whistle's cause (ratified: cause-typed pickup). Picked by
+// the holder with one tap, private to them — never rendered in the feed.
+// Each cause routes to its own remedy; the routing lives in lib/whistle.ts.
+export const whistleCause = pgEnum("whistle_cause", [
+  "unclear", // next action unclear → define it (inline)
+  "too_big", // too big → split it (new-task form)
+  "missing_skill", // missing skill → ask for help (blocker form)
+  "waiting", // waiting on someone → name the unblocker (blocker form)
+  "moving", // actually moving → link the evidence (inline)
+]);
+
 export const taskStatus = pgEnum("task_status", [
   "todo",
   "building",
@@ -75,6 +86,13 @@ export const projects = pgTable("projects", {
   ballPassedAt: timestamp("ball_passed_at"),
   ballPasserId: integer("ball_passer_id").references(() => users.id),
   rallyCount: integer("rally_count").default(0).notNull(),
+
+  // The dead-ball whistle (ratified, second harvest): a held ball with no
+  // recorded motion for 48h gets whistled. blownAt set = whistle live;
+  // cause is the holder's private one-tap answer, null until they pick.
+  // Cleared only by the routed remedy actually existing.
+  whistleBlownAt: timestamp("whistle_blown_at"),
+  whistleCause: whistleCause("whistle_cause"),
 
   // Archive, never destroy: null = live, set = archived.
   archivedAt: timestamp("archived_at"),
@@ -154,6 +172,11 @@ export const eventKind = pgEnum("event_kind", [
   "ball_passed",
   "ball_caught",
   "ball_dropped",
+  // The whistle is public and actorless (locked: movement is public,
+  // diagnosis is not); the pickup names the holder getting it moving
+  // again. The cause NEVER rides on either event.
+  "whistle_blown",
+  "ball_picked_up",
 ]);
 
 // Append-only shipping log. State tables answer "where are things now";

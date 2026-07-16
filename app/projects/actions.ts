@@ -10,6 +10,7 @@ import { projects, tasks, users } from "@/lib/db/schema";
 import { convertAssistsFor, emitEvent } from "@/lib/events";
 import { RALLY_DROP_MS, sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
+import { WHISTLE_CAUSES, type WhistleCause } from "@/lib/whistle";
 
 const TASK_STATUSES = [
   "todo",
@@ -130,12 +131,19 @@ export async function setBallAction(projectId: number, formData: FormData) {
   const holderChanged = holderId !== project.ballHolderId;
   const isPass = holderChanged && holderId !== null && holderId !== userId;
 
+  // Real ball movement clears a live whistle: a changed next action or a
+  // changed holder is exactly what the whistle was asking for. A no-op
+  // resubmit clears nothing.
+  const ballMoved = holderChanged || nextAction !== project.nextAction;
+  const clearsWhistle = project.whistleBlownAt !== null && ballMoved;
+
   await db
     .update(projects)
     .set({
       nextAction,
       ballHolderId: holderId,
       nextActionCommittedFor: committedFor ? new Date(committedFor) : null,
+      ...(clearsWhistle && { whistleBlownAt: null, whistleCause: null }),
       // A pass starts the clock; taking it yourself clears any stale air;
       // an unchanged holder is an edit and leaves the clock alone.
       ballPassedAt: holderChanged
@@ -162,6 +170,17 @@ export async function setBallAction(projectId: number, formData: FormData) {
       projectId,
       detail: receiver?.name ?? "someone",
     });
+  } else if (clearsWhistle) {
+    // Same artifact as the define-it remedy, reached through the ball
+    // panel instead of the card: the pickup speaks. On a pass, the
+    // ball_passed line above already tells the story.
+    await emitEvent({
+      kind: "ball_picked_up",
+      actorId: userId,
+      projectId,
+      detail: nextAction ?? undefined,
+    });
+    revalidatePath("/me");
   }
 
   revalidatePath(`/projects/${projectId}`);
@@ -218,10 +237,130 @@ export async function catchBallAction(projectId: number, formData: FormData) {
   revalidatePath("/me");
 }
 
+/**
+ * The dead-ball whistle's one-tap cause (ratified: forced, private,
+ * holder-only). Picking a navigate-mode cause routes straight to where
+ * the real remedy form lives; the whistle stays up until that artifact
+ * exists. An empty cause is the "different cause" tap — back to the
+ * five buttons.
+ */
+export async function pickWhistleCauseAction(
+  projectId: number,
+  formData: FormData
+) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const raw = str(formData, "cause");
+  const cause =
+    raw && raw in WHISTLE_CAUSES ? (raw as WhistleCause) : null;
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  // The cause is the holder's to name — no one else diagnoses your ball.
+  if (!project || !project.whistleBlownAt || project.ballHolderId !== userId)
+    return;
+
+  await db
+    .update(projects)
+    .set({ whistleCause: cause })
+    .where(eq(projects.id, projectId));
+
+  revalidatePath("/me");
+  if (cause && WHISTLE_CAUSES[cause].mode === "navigate") {
+    redirect(`/projects/${projectId}${WHISTLE_CAUSES[cause].anchor ?? ""}`);
+  }
+}
+
+/**
+ * Inline pickup, "define it": one next-action field on the card, exactly
+ * like the catch. Naming the move clears the whistle in place and the
+ * feed witnesses the pickup — never the cause.
+ */
+export async function pickupDefineAction(
+  projectId: number,
+  formData: FormData
+) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const nextAction = str(formData, "nextAction");
+  if (!nextAction) return;
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (!project || !project.whistleBlownAt || project.ballHolderId !== userId)
+    return;
+
+  await db
+    .update(projects)
+    .set({
+      nextAction,
+      whistleBlownAt: null,
+      whistleCause: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(projects.id, projectId));
+
+  await emitEvent({
+    kind: "ball_picked_up",
+    actorId: userId,
+    projectId,
+    detail: nextAction,
+  });
+
+  revalidatePath("/me");
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
+ * Inline pickup, "actually moving": one URL field. The evidence (a PR,
+ * an issue, a doc) rides in the event's detail for the record; the feed
+ * line just states the pickup.
+ */
+export async function pickupEvidenceAction(
+  projectId: number,
+  formData: FormData
+) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const evidence = str(formData, "evidenceUrl");
+  if (!evidence) return;
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (!project || !project.whistleBlownAt || project.ballHolderId !== userId)
+    return;
+
+  await db
+    .update(projects)
+    .set({ whistleBlownAt: null, whistleCause: null, updatedAt: new Date() })
+    .where(eq(projects.id, projectId));
+
+  await emitEvent({
+    kind: "ball_picked_up",
+    actorId: userId,
+    projectId,
+    detail: evidence,
+  });
+
+  revalidatePath("/me");
+  revalidatePath(`/projects/${projectId}`);
+}
+
 export async function createTaskAction(
   projectId: number,
   formData: FormData
 ) {
+  // Attribution forces authentication (same surfacing as moveTaskAction):
+  // a task created as the split-it remedy emits a pickup, which needs a WHO.
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   const title = str(formData, "title");
   if (!title) return;
 
@@ -233,6 +372,26 @@ export async function createTaskAction(
     definitionOfDone: str(formData, "definitionOfDone"),
     assigneeId: assignee ? Number(assignee) : null,
   });
+
+  // Split-it remedy: the whistle clears when the smaller task exists.
+  // Task creation has no feed line of its own, so the pickup speaks —
+  // one line per move, and the cause stays private.
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (project?.whistleBlownAt && project.whistleCause === "too_big") {
+    await db
+      .update(projects)
+      .set({ whistleBlownAt: null, whistleCause: null, updatedAt: new Date() })
+      .where(eq(projects.id, projectId));
+    await emitEvent({
+      kind: "ball_picked_up",
+      actorId: userId,
+      projectId,
+      detail: title,
+    });
+    revalidatePath("/me");
+  }
 
   revalidatePath(`/projects/${projectId}`);
 }
@@ -277,6 +436,28 @@ export async function moveTaskAction(
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId));
+
+    // Help-path remedies (ask for help / name the unblocker): the whistle
+    // clears when the blocker exists. Silently — blocker_raised below is
+    // the public line, one line per move.
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, projectId),
+    });
+    if (
+      project?.whistleBlownAt &&
+      (project.whistleCause === "missing_skill" ||
+        project.whistleCause === "waiting")
+    ) {
+      await db
+        .update(projects)
+        .set({
+          whistleBlownAt: null,
+          whistleCause: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, projectId));
+      revalidatePath("/me");
+    }
   } else {
     await db
       .update(tasks)

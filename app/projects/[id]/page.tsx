@@ -11,6 +11,7 @@ import { projects, tasks, users } from "@/lib/db/schema";
 import { fmtElapsed } from "@/lib/events";
 import { requestNowMs } from "@/lib/journey";
 import { sweepDrops } from "@/lib/rally";
+import { sweepWhistles } from "@/lib/whistle";
 
 import { STAGE_ORDER } from "@/lib/stages";
 
@@ -39,6 +40,7 @@ export default async function ProjectPage({
   if (Number.isNaN(projectId)) notFound();
 
   await sweepDrops(); // overdue passes become drops before we render
+  await sweepWhistles(); // then still balls get whistled (drops reset the clock)
 
   const viewerId = await currentDbUserId();
   const project = await db.query.projects.findFirst({
@@ -63,6 +65,13 @@ export default async function ProjectPage({
   const moving = projectTasks.some((t) => t.status !== "todo");
   const showNudge = project.stage === "define" && moving && !defined;
   const blockedTasks = projectTasks.filter((t) => t.status === "blocked");
+
+  // The split-it remedy lands here with the form already open — the
+  // whistled holder shouldn't have to find the button they were sent to.
+  const whistleWantsSplit =
+    project.whistleBlownAt !== null &&
+    project.whistleCause === "too_big" &&
+    viewerId === project.ballHolderId;
 
   const advance = advanceStageAction.bind(null, project.id);
   const define = defineProjectAction.bind(null, project.id);
@@ -187,6 +196,13 @@ export default async function ProjectPage({
               {project.nextAction}
               <span className="font-mono text-xs font-normal text-muted">
                 · {nameOf(project.ballHolderId)}
+                {project.whistleBlownAt && (
+                  <span className="text-amber">
+                    {" "}
+                    · whistled — still too long; the holder picks it up on
+                    their command center
+                  </span>
+                )}
                 {project.nextActionCommittedFor &&
                   project.nextActionCommittedFor > new Date() &&
                   ` · committed for ${project.nextActionCommittedFor.toLocaleDateString()}`}
@@ -304,13 +320,14 @@ export default async function ProjectPage({
           </section>
         )}
 
-        {/* Task board */}
-        <section className="mt-8">
+        {/* Task board. The ids are remedy landing spots: the whistle's
+            split-it routes to #new-task, the help causes to #task-list. */}
+        <section id="task-list" className="mt-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
               tasks
             </h2>
-            <details>
+            <details id="new-task" open={whistleWantsSplit}>
               <summary className="cursor-pointer rounded bg-ball px-3 py-1.5 font-mono text-xs font-bold text-court hover:bg-ball-deep">
                 + new task
               </summary>
