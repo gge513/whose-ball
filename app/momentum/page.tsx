@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { JourneySpine } from "@/app/components/journey-header";
 import { SiteHeader } from "@/app/components/site-header";
 import { feedLine, loadFeed, loadMomentumTiles } from "@/lib/events";
 
@@ -64,6 +65,16 @@ export default async function MomentumPage() {
         <p className="mt-1 font-mono text-[11px] text-faint">
           what the cohort is shipping · nobody is ranked here
         </p>
+
+        {/* The full journey spine: the only page that shows the whole week */}
+        <section className="mt-6">
+          <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
+            the week
+          </h2>
+          <div className="mt-3">
+            <JourneySpine />
+          </div>
+        </section>
 
         {/* Collective tiles: totals only, every one a door into the work */}
         <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

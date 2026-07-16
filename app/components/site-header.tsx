@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { JourneyHeader } from "./journey-header";
+
 /**
  * Scoreboard top bar: the wordmark with the live ball, the two-screen nav,
- * and the auth control.
+ * and the auth control — with the journey strip (phase · countdown · your
+ * standing) riding underneath on every page.
  */
 export function SiteHeader({
   active,
@@ -46,6 +49,7 @@ export function SiteHeader({
         </div>
         {auth}
       </div>
+      <JourneyHeader />
     </header>
   );
 }
