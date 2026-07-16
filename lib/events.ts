@@ -32,9 +32,49 @@ export async function emitEvent(e: {
   }
 }
 
+/**
+ * The assist chain, step two: when a task ships, every distinct member
+ * who logged an assist on it gets that assist converted — once. The
+ * events table itself is the memory (the task's blocker fields are long
+ * cleared by then). Same fire-and-forget contract as emitEvent.
+ */
+export async function convertAssistsFor(
+  taskId: number,
+  taskTitle: string,
+  projectId?: number
+) {
+  try {
+    const assisted = await db
+      .select({ actorId: events.actorId })
+      .from(events)
+      .where(sql`${events.kind} = 'assist' and ${events.taskId} = ${taskId}`);
+    const converted = await db
+      .select({ actorId: events.actorId })
+      .from(events)
+      .where(
+        sql`${events.kind} = 'assist_converted' and ${events.taskId} = ${taskId}`
+      );
+
+    const already = new Set(converted.map((c) => c.actorId));
+    for (const actorId of new Set(assisted.map((a) => a.actorId))) {
+      if (already.has(actorId)) continue;
+      await emitEvent({
+        kind: "assist_converted",
+        actorId,
+        projectId,
+        taskId,
+        detail: taskTitle,
+      });
+    }
+  } catch {
+    // Same contract as emitEvent: the ship already happened.
+  }
+}
+
 export type FeedItem = {
   id: number;
   kind: EventKind;
+  actorId: number;
   actorName: string;
   actorLogin: string | null;
   projectId: number | null;
@@ -50,6 +90,7 @@ export async function loadFeed(limit = 50): Promise<FeedItem[]> {
     .select({
       id: events.id,
       kind: events.kind,
+      actorId: events.actorId,
       actorName: actor.name,
       actorLogin: actor.githubLogin,
       projectId: events.projectId,
@@ -134,5 +175,9 @@ export function feedLine(item: FeedItem): string {
       return `filed a review`;
     case "submission_merged":
       return `merged their submission PR`;
+    case "assist":
+      return `assisted on "${item.detail}"`;
+    case "assist_converted":
+      return `assist converted — "${item.detail}" shipped`;
   }
 }

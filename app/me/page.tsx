@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { and, asc, eq, isNull, ne } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { SiteHeader } from "@/app/components/site-header";
@@ -10,10 +11,17 @@ import { STAGE_ORDER } from "@/lib/stages";
 
 export const dynamic = "force-dynamic";
 
+/** How long someone has been waiting, in the coarsest honest unit. */
+function waitedFor(since: Date): string {
+  const h = Math.max(1, Math.floor((Date.now() - since.getTime()) / 3600000));
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
 /**
  * The command center — the front door. Answers, in order:
- * what's my next move (the balls), who is depending on me, what's mine
- * in flight, with the cohort's pulse one glance away.
+ * what's my next move (the balls), what you're holding that others wait
+ * on, what's mine in flight, with the cohort's pulse one glance away.
  */
 export default async function MePage() {
   const userId = await currentDbUserId();
@@ -47,16 +55,24 @@ export default async function MePage() {
     )
     .orderBy(asc(projects.updatedAt));
 
-  const waitingOnMe = await db
+  // The possession view (ratified): every ball you hold that someone else
+  // is waiting on — blockers naming you, plus project balls you hold on
+  // someone else's project. Ranked by wait time, capped at three, private
+  // to this page, never scored.
+  const waiter = alias(users, "waiter");
+  const blockedOnMe = await db
     .select({
       id: tasks.id,
       title: tasks.title,
       projectId: tasks.projectId,
       projectName: projects.name,
       whatNeeded: tasks.blockedWhatNeeded,
+      since: tasks.blockedAt,
+      waiterName: waiter.name,
     })
     .from(tasks)
     .leftJoin(projects, eq(tasks.projectId, projects.id))
+    .leftJoin(waiter, eq(tasks.assigneeId, waiter.id))
     .where(
       and(
         eq(tasks.status, "blocked"),
@@ -64,6 +80,46 @@ export default async function MePage() {
         isNull(tasks.archivedAt)
       )
     );
+  const owner = alias(users, "owner");
+  const heldBalls = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      nextAction: projects.nextAction,
+      since: projects.updatedAt,
+      waiterName: owner.name,
+    })
+    .from(projects)
+    .leftJoin(owner, eq(projects.ownerId, owner.id))
+    .where(
+      and(
+        eq(projects.ballHolderId, userId),
+        ne(projects.ownerId, userId),
+        isNull(projects.archivedAt)
+      )
+    );
+
+  const holding = [
+    ...blockedOnMe.map((t) => ({
+      key: `task-${t.id}`,
+      href: `/projects/${t.projectId}`,
+      label: t.title,
+      sub: `${t.projectName} · needs: ${t.whatNeeded}`,
+      waiterName: t.waiterName,
+      since: t.since,
+    })),
+    ...heldBalls.map((p) => ({
+      key: `ball-${p.id}`,
+      href: `/projects/${p.id}`,
+      label: p.nextAction ?? `the ball on ${p.name}`,
+      sub: `${p.name} · you hold the ball`,
+      waiterName: p.waiterName,
+      since: p.since,
+    })),
+  ].sort(
+    (a, b) => (a.since?.getTime() ?? Infinity) - (b.since?.getTime() ?? Infinity)
+  );
+  const holdingTop = holding.slice(0, 3);
 
   const myOpenTasks = await db
     .select({
@@ -169,29 +225,54 @@ export default async function MePage() {
           )}
         </section>
 
-        {/* Mutuality: who is depending on me */}
-        {waitingOnMe.length > 0 && (
-          <section className="mt-8">
-            <h2 className="font-mono text-[11px] uppercase tracking-wide text-amber">
-              waiting on you · {waitingOnMe.length}
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {waitingOnMe.map((t) => (
-                <li key={t.id}>
-                  <Link
-                    href={`/projects/${t.projectId}`}
-                    className="block rounded border border-amber/40 bg-panel p-3 transition-colors hover:border-amber"
-                  >
-                    <span className="font-mono text-sm text-ink">{t.title}</span>
-                    <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                      {t.projectName} · needs: {t.whatNeeded}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* The possession view: what you hold that others are waiting on.
+            Always rendered — the empty state does the motivational work. */}
+        <section className="mt-8">
+          <h2
+            className={`font-mono text-[11px] uppercase tracking-wide ${
+              holding.length > 0 ? "text-amber" : "text-muted"
+            }`}
+          >
+            holding · {holding.length} waiting on you
+          </h2>
+          {holding.length === 0 ? (
+            <p className="mt-2 font-mono text-sm text-faint">
+              Nothing waiting on you. Clean hands.
+            </p>
+          ) : (
+            <>
+              <ul className="mt-3 space-y-2">
+                {holdingTop.map((h) => (
+                  <li key={h.key}>
+                    <Link
+                      href={h.href}
+                      className="flex items-baseline gap-3 rounded border border-amber/40 bg-panel p-3 transition-colors hover:border-amber"
+                    >
+                      <span className="flex-1">
+                        <span className="font-mono text-sm text-ink">
+                          {h.label}
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          {h.sub}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-mono text-[11px] text-amber">
+                        {h.waiterName ?? "someone"} waiting
+                        {h.since && ` · ${waitedFor(h.since)}`}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {holding.length > holdingTop.length && (
+                <p className="mt-2 font-mono text-[11px] text-faint">
+                  + {holding.length - holdingTop.length} more, longest waits
+                  first
+                </p>
+              )}
+            </>
+          )}
+        </section>
 
         {/* My open tasks */}
         <section className="mt-8">

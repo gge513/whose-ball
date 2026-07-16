@@ -7,7 +7,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
-import { emitEvent } from "@/lib/events";
+import { convertAssistsFor, emitEvent } from "@/lib/events";
 import { STAGE_ORDER } from "@/lib/stages";
 
 const TASK_STATUSES = [
@@ -198,6 +198,24 @@ export async function moveTaskAction(
       .where(eq(tasks.id, taskId));
   }
 
+  // The assist (ratified: the save is the scored act). Any exit from
+  // "blocked" logs an assist to the member the blocker named — whoever
+  // physically moved the task. Farming is accepted as low-risk: the
+  // assist only converts when the task really ships.
+  if (
+    before.status === "blocked" &&
+    status !== "blocked" &&
+    before.blockedUnblockerId
+  ) {
+    await emitEvent({
+      kind: "assist",
+      actorId: before.blockedUnblockerId,
+      projectId,
+      taskId,
+      detail: before.title,
+    });
+  }
+
   // One transition, at most one feed line. Done and blocked/unblocked are
   // the states someone else can feel; the rest is private motion.
   if (status === "done") {
@@ -208,6 +226,9 @@ export async function moveTaskAction(
       taskId,
       detail: before.title,
     });
+    // Step two of the assist chain — runs after the assist emit above so
+    // a straight blocked→done still converts in the same move.
+    await convertAssistsFor(taskId, before.title, projectId);
   } else if (status === "blocked") {
     await emitEvent({
       kind: "blocker_raised",
@@ -216,7 +237,12 @@ export async function moveTaskAction(
       taskId,
       detail: before.title,
     });
-  } else if (before.status === "blocked") {
+  } else if (
+    before.status === "blocked" &&
+    before.blockedUnblockerId !== userId
+  ) {
+    // When the named unblocker moved it themselves, the assist line above
+    // already tells this story — one line per person per transition.
     await emitEvent({
       kind: "blocker_cleared",
       actorId: userId,

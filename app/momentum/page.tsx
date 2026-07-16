@@ -32,6 +32,8 @@ const KIND_COLOR: Record<string, string> = {
   project_created: "text-ink",
   blocker_raised: "text-amber",
   blocker_cleared: "text-ball",
+  assist: "text-posted",
+  assist_converted: "text-ball",
 };
 
 export default async function MomentumPage() {
@@ -126,7 +128,12 @@ export default async function MomentumPage() {
                     ●
                   </span>
                   <span className="flex-1 font-mono text-sm text-ink">
-                    <span className="font-bold">{item.actorName}</span>{" "}
+                    <Link
+                      href={`/members/${item.actorId}`}
+                      className="font-bold hover:text-ball"
+                    >
+                      {item.actorName}
+                    </Link>{" "}
                     <span className="text-muted">{feedLine(item)}</span>
                     {item.projectId &&
                       item.kind !== "project_created" &&

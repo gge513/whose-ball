@@ -129,6 +129,9 @@ export const votes = pgTable(
 // The moments that matter, as a fixed list: anything else is not a feed
 // event. Votes are deliberately absent — the ballot is private and no
 // event may ever leak that it happened.
+// "assist" logs to the named unblocker when a blocker clears; it
+// "assist_converted"s when the unblocked task ships. The save is the
+// scored act — prevention made visible.
 export const eventKind = pgEnum("event_kind", [
   "project_created",
   "stage_advanced",
@@ -137,6 +140,8 @@ export const eventKind = pgEnum("event_kind", [
   "blocker_cleared",
   "review_filed",
   "submission_merged",
+  "assist",
+  "assist_converted",
 ]);
 
 // Append-only shipping log. State tables answer "where are things now";

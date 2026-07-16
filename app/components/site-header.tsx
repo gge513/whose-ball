@@ -12,7 +12,8 @@ export function SiteHeader({
   active,
   auth,
 }: {
-  active: "momentum" | "projects" | "tasks" | "me" | "review";
+  /** Omitted on pages that belong to no tab (member pages). */
+  active?: "momentum" | "projects" | "tasks" | "me" | "review";
   auth: ReactNode;
 }) {
   const tab = (href: string, label: string, key: string) => (
