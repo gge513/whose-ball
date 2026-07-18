@@ -63,7 +63,20 @@ Source ore: `docs/brainstorms/2026-07-15-evernote-pm-communication-ore.md` (mine
 
 **Voice frame (ratified same day, B/B/A):** the DFW-informed voice lives in the weekly narrative and momentum page only, mechanic microcopy stays plain; vocabulary is only the words the mechanics earn (rally, catch, drop, assist, hold), no decorative tennis lexicon; DFW is named and quoted, one real epigraph in the README/thesis (candidate: the Federer-essay line on beauty and high-level sport). Wallace-informed, never Wallace-imitating. The mapping (Joyce essay → Assists; Federer Moments → feed-without-rank; chess-on-the-run → ball-as-button; the rally as the living unit → catch-or-drop) is the PR body's motivation-design-notes spine.
 
-## Live-site reconciliation (2026-07-13, supersedes repo docs where they differ)
+## Live-site re-check (2026-07-18, supersedes the 2026-07-13 reconciliation where they differ)
+
+Source: the public program page, fetched Fri Jul 18 while answering "how do I review the merged submissions."
+
+| Fact | Live site 2026-07-18 (authoritative) | Previously verified (Jul 13) |
+| --- | --- | --- |
+| Cohort size | **65 enrolled → 64 peer reviews** | 59 → 58 reviews |
+| Review window | **opens Sun Jul 19 21:00 UTC (17:00 ET, at submission close) · closes Mon Jul 20 18:00 UTC (14:00 ET)** — a 21-hour window | close time known, open time not |
+| Vote mechanics | **PUBLIC opt-in upvote: "Vote: up" written inside the review issue, or abstain; most votes wins** | private review-gated thumbs up/down, no tallies (winner-selection.md) |
+| Review artifact | "Written technical review on each peer submission (GitHub issue)"; filing LOCATION still unstated — repo doc says reviewee's repo, the two-handle title `Review by @{me}: @{peer}` and Roger's own example issues on the cohort repo suggest central filing. **CONFIRM ON THE ENROLLED DASHBOARD before filing the first one.** | title format from the dashboard |
+
+Implication for whose-ball: the app's private-ballot review console implements the Jul 13 governance spec, which the live site has since changed (public Vote: up in-issue). Treat as a known limitation + candidate post-merge update, alongside the `github-reviews.ts` title-format fix. Implication for George's own duty: up to 64 reviews in a 21-hour window is only survivable with prep — draft reviews against already-merged peers BEFORE the window opens (13 unique peers merged as of Fri evening), file when it opens.
+
+## Live-site reconciliation (2026-07-13, superseded above where they differ; supersedes repo docs where they differ)
 
 Source: https://site-nine-rouge-68.vercel.app/program/phase-1-project-1 (the platform George was admitted to). Where this section conflicts with the repo-doc facts below, THIS wins.
 
