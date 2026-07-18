@@ -85,7 +85,7 @@ The two-table philosophy: state tables answer "where are things now," the event 
 
 ## Known limitations
 
-- The four visible cohort members are **seeded demo rows** (Maya, Devon, Priya, Sam), kept so the review console is demonstrable; they get swapped for the real roster as it lands.
+- The four visible cohort members are **seeded demo rows** (Maya, Devon, Priya, Sam), kept so the review console is demonstrable, along with one seeded review + vote by the author against a demo submission; all of it gets swapped for the real roster as it lands.
 - Review-week standing (`reviews x/N · votes x/N` in the journey header) goes live when the phase flips; the query is in place.
 - `lib/github-reviews.ts` review-issue detection matches the pre-pilot title format; updating to the live `Review by @{me}: @{peer}` format is queued.
 - The weekly narrative addresses every reader in the third person, deliberately but provisionally; the subject is a parameter, so second-person-on-your-own-page is a small change if lived use argues for it.
