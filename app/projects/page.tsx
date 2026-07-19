@@ -2,6 +2,7 @@ import Link from "next/link";
 import { asc, isNull } from "drizzle-orm";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
@@ -81,14 +82,14 @@ export default async function ProjectsPage() {
 
               return (
                 <li key={p.id}>
-                  <Link
-                    href={`/projects/${p.id}`}
-                    className="block rounded border border-line bg-panel p-5 transition-colors hover:border-ball/40"
-                  >
+                  <div className="block rounded border border-line bg-panel p-5 transition-colors hover:border-ball/40">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="font-display text-lg font-bold text-ink">
+                      <Link
+                        href={`/projects/${p.id}`}
+                        className="font-display text-lg font-bold text-ink hover:text-ball"
+                      >
                         {p.name}
-                      </span>
+                      </Link>
                       <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wide">
                         {STAGE_ORDER.map((s, i) => (
                           <span
@@ -114,7 +115,11 @@ export default async function ProjectsPage() {
                           {p.nextAction}
                           {nameOf(p.ballHolderId) && (
                             <span className="text-muted">
-                              · {nameOf(p.ballHolderId)}
+                              ·{" "}
+                              <MemberLink
+                                id={p.ballHolderId}
+                                name={nameOf(p.ballHolderId)}
+                              />
                             </span>
                           )}
                         </span>
@@ -132,7 +137,7 @@ export default async function ProjectsPage() {
                         </span>
                       )}
                     </div>
-                  </Link>
+                  </div>
                 </li>
               );
             })}

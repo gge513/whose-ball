@@ -2,6 +2,7 @@ import Link from "next/link";
 import { and, asc, eq, isNull, type SQL } from "drizzle-orm";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
@@ -39,6 +40,7 @@ export default async function TasksPage({
       status: tasks.status,
       projectId: tasks.projectId,
       projectName: projects.name,
+      assigneeId: tasks.assigneeId,
       assigneeName: users.name,
     })
     .from(tasks)
@@ -123,28 +125,40 @@ export default async function TasksPage({
         ) : (
           <ul className="mt-6 divide-y divide-line-soft rounded border border-line bg-panel">
             {rows.map((t) => (
-              <li key={t.id}>
+              <li
+                key={t.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-panel-2"
+              >
                 <Link
                   href={`/projects/${t.projectId}`}
-                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-panel-2"
+                  className="font-mono text-sm text-ink hover:text-ball"
                 >
-                  <span className="font-mono text-sm text-ink">{t.title}</span>
-                  <span className="flex items-center gap-4 font-mono text-[11px]">
-                    <span className="text-muted">{t.projectName}</span>
-                    <span className="text-faint">{t.assigneeName ?? "unassigned"}</span>
-                    <span
-                      className={
-                        t.status === "done"
-                          ? "text-posted"
-                          : t.status === "blocked"
-                            ? "text-amber"
-                            : "text-ball"
-                      }
-                    >
-                      {t.status}
-                    </span>
-                  </span>
+                  {t.title}
                 </Link>
+                <span className="flex items-center gap-4 font-mono text-[11px]">
+                  <Link
+                    href={`/projects/${t.projectId}`}
+                    className="text-muted hover:text-ink"
+                  >
+                    {t.projectName}
+                  </Link>
+                  <MemberLink
+                    id={t.assigneeId}
+                    name={t.assigneeName ?? "unassigned"}
+                    className="text-faint"
+                  />
+                  <span
+                    className={
+                      t.status === "done"
+                        ? "text-posted"
+                        : t.status === "blocked"
+                          ? "text-amber"
+                          : "text-ball"
+                    }
+                  >
+                    {t.status}
+                  </span>
+                </span>
               </li>
             ))}
           </ul>

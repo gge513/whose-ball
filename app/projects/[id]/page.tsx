@@ -4,6 +4,7 @@ import { asc, eq, isNull, and } from "drizzle-orm";
 
 import { AdvanceGate } from "@/app/components/advance-gate";
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
@@ -152,9 +153,18 @@ export default async function ProjectPage({
             <div className="mt-2">
               <p className="flex items-center gap-2.5 font-display text-lg font-bold text-ink">
                 <span className="ball-dot" />
-                in the air → {nameOf(project.ballHolderId)}
+                in the air →{" "}
+                <MemberLink
+                  id={project.ballHolderId}
+                  name={nameOf(project.ballHolderId)}
+                />
                 <span className="font-mono text-xs font-normal text-muted">
-                  · from {nameOf(project.ballPasserId)} ·{" "}
+                  · from{" "}
+                  <MemberLink
+                    id={project.ballPasserId}
+                    name={nameOf(project.ballPasserId)}
+                  />{" "}
+                  ·{" "}
                   {fmtElapsed(
                     (requestNowMs() - project.ballPassedAt.getTime()) / 1000
                   )}{" "}
@@ -195,7 +205,11 @@ export default async function ProjectPage({
               <span className="ball-dot" />
               {project.nextAction}
               <span className="font-mono text-xs font-normal text-muted">
-                · {nameOf(project.ballHolderId)}
+                ·{" "}
+                <MemberLink
+                  id={project.ballHolderId}
+                  name={nameOf(project.ballHolderId)}
+                />
                 {project.whistleBlownAt && (
                   <span className="text-amber">
                     {" "}
@@ -312,7 +326,11 @@ export default async function ProjectPage({
                   <span className="text-muted">
                     {" "}
                     — tried: {t.blockedWhatTried} · needs: {t.blockedWhatNeeded}{" "}
-                    · can unblock: {nameOf(t.blockedUnblockerId)}
+                    · can unblock:{" "}
+                    <MemberLink
+                      id={t.blockedUnblockerId}
+                      name={nameOf(t.blockedUnblockerId)}
+                    />
                   </span>
                 </li>
               ))}
@@ -400,7 +418,10 @@ export default async function ProjectPage({
                           <p className="font-mono text-sm text-ink">{t.title}</p>
                           {t.assigneeId && (
                             <p className="mt-1 font-mono text-[11px] text-muted">
-                              {nameOf(t.assigneeId)}
+                              <MemberLink
+                                id={t.assigneeId}
+                                name={nameOf(t.assigneeId)}
+                              />
                             </p>
                           )}
                           {t.definitionOfDone && (

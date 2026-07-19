@@ -3,6 +3,7 @@ import { and, asc, eq, isNull, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import {
   catchBallAction,
@@ -76,6 +77,7 @@ export default async function MePage() {
       ballPassedAt: projects.ballPassedAt,
       whistleBlownAt: projects.whistleBlownAt,
       whistleCause: projects.whistleCause,
+      passerId: projects.ballPasserId,
       passerName: passer.name,
     })
     .from(projects)
@@ -211,8 +213,16 @@ export default async function MePage() {
           </span>
         </Link>
 
-        <h1 className="mt-8 font-display text-2xl font-extrabold uppercase tracking-[0.08em]">
-          {me?.name ?? "you"}
+        <h1 className="mt-8 flex flex-wrap items-baseline gap-x-4 font-display text-2xl font-extrabold uppercase tracking-[0.08em]">
+          <Link href={`/members/${userId}`} className="hover:text-ball">
+            {me?.name ?? "you"}
+          </Link>
+          <Link
+            href={`/members/${userId}`}
+            className="font-mono text-xs font-normal normal-case tracking-normal text-muted hover:text-ball"
+          >
+            your season →
+          </Link>
         </h1>
 
         {/* The balls: next actions with handles */}
@@ -241,7 +251,8 @@ export default async function MePage() {
                       <span className="ball-dot shrink-0" />
                       <span className="flex-1">
                         <span className="block font-display text-base font-bold text-ink">
-                          {p.passerName ?? "Someone"} passed you the ball
+                          <MemberLink id={p.passerId} name={p.passerName} />{" "}
+                          passed you the ball
                         </span>
                         <span className="mt-0.5 block font-mono text-[11px] text-muted">
                           <Link

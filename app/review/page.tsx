@@ -2,6 +2,7 @@ import Link from "next/link";
 import { eq } from "drizzle-orm";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
+import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
@@ -165,7 +166,7 @@ export default async function ReviewPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="font-display text-base font-bold text-ink">
-                      {s.name}
+                      <MemberLink id={s.userId} name={s.name} />
                     </span>
                     {isDeep && (
                       <span
@@ -307,7 +308,8 @@ export default async function ReviewPage() {
             <ul className="mt-2 space-y-1">
               {excluded.map((s) => (
                 <li key={s.id} className="font-mono text-xs text-faint">
-                  {s.name} — may still review and vote; cannot receive votes
+                  <MemberLink id={s.userId} name={s.name} /> — may still review
+                  and vote; cannot receive votes
                 </li>
               ))}
             </ul>
