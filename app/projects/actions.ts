@@ -108,6 +108,32 @@ export async function advanceStageAction(projectId: number) {
 }
 
 /**
+ * The reverse gear: one station back, no gate, no feed line. A retreat is
+ * a correction to the story, not a story of its own — the feed keeps the
+ * advances it already witnessed (append-only), and the strip simply tells
+ * the truth again.
+ */
+export async function retreatStageAction(projectId: number) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+  });
+  if (!project || project.archivedAt) return;
+
+  const idx = STAGE_ORDER.indexOf(project.stage);
+  if (idx <= 0) return; // define has nothing behind it
+
+  await db
+    .update(projects)
+    .set({ stage: STAGE_ORDER[idx - 1], updatedAt: new Date() })
+    .where(eq(projects.id, projectId));
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
  * The ball: one next action, one holder, optional quiet when-commitment.
  * The rally rides on top: giving the ball to someone ELSE is a pass — it
  * goes in the air, and it's theirs only when they catch it. Keeping it
@@ -122,6 +148,12 @@ export async function setBallAction(projectId: number, formData: FormData) {
   const holder = str(formData, "ballHolderId");
   const committedFor = str(formData, "committedFor");
   const holderId = holder ? Number(holder) : null;
+
+  // The ball is an action AND a holder — one without the other isn't a
+  // ball ("whose ball?" with no answer, or a holder with nothing to do).
+  // The form requires both; this holds when the form is bypassed.
+  if (holderId !== null && !nextAction) return;
+  if (holderId === null && nextAction) return;
 
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),

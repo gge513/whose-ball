@@ -359,25 +359,29 @@ function cohortClose(c: CohortWindow, seed: number): string | null {
 }
 
 /**
- * The paragraph. Renders whichever movements have material (the ratified
+ * The chapter, as paragraphs (amended 2026-07-19, tune-list #8, George's
+ * ratification off a real rendered week): the member's own motion is one
+ * paragraph, the connective tissue is its OWN paragraph — two movements
+ * you can see. Renders whichever movements have material (the ratified
  * quiet-week fold-in): no own motion still narrates the connective tissue,
  * nothing at all gets the one honest, no-fault line — never silence,
- * never scolding.
+ * never scolding. The cohort close stays the last sentence of the last
+ * paragraph, wherever that lands.
  */
 export function writeChapter(input: {
   subject: Subject;
   events: NarrativeEvent[];
   cohort: CohortWindow;
   seed: number;
-}): string {
+}): string[] {
   const own = input.events.filter((e) => OWN_KINDS.has(e.kind));
   const conn = input.events.filter((e) => CONNECTIVE_KINDS.has(e.kind));
   const shape = classify(own, conn);
   const s = input.subject;
 
-  const sentences: string[] = [opening(shape, s, input.seed)];
+  const first: string[] = [opening(shape, s, input.seed)];
 
-  if (shape === "quiet") return sentences[0];
+  if (shape === "quiet") return [first[0]];
 
   const m1 = ownClauses(own);
   const m2 = connectiveClauses(conn);
@@ -387,22 +391,25 @@ export function writeChapter(input: {
 
   if (m1Rest.length > 0) {
     // First movement rides on the pronoun; the name was spent in the opening.
-    sentences.push(joinClauses(cap(s.pronoun), m1Rest));
+    first.push(joinClauses(cap(s.pronoun), m1Rest));
   }
+
+  const paragraphs: string[] = [first.join(" ")];
+
   if (m2.length > 0) {
     const connectors = [
       "The connective tissue:",
       "And the part with other people's names in it:",
     ];
-    sentences.push(
+    paragraphs.push(
       `${pick(connectors, input.seed + 1)} ${lower(joinClauses(s.pronoun, m2))}`
     );
   }
 
   const close = cohortClose(input.cohort, input.seed + 2);
-  if (close) sentences.push(close);
+  if (close) paragraphs[paragraphs.length - 1] += ` ${close}`;
 
-  return sentences.join(" ");
+  return paragraphs;
 }
 
 const cap = (w: string) => w[0].toUpperCase() + w.slice(1);
@@ -415,7 +422,7 @@ const lower = (sentence: string) =>
 
 export type ChapterReport = {
   chapter: Chapter;
-  paragraph: string;
+  paragraphs: string[];
 };
 
 /**
@@ -470,7 +477,7 @@ export async function loadNarrative(member: {
 
     reports.push({
       chapter,
-      paragraph: writeChapter({
+      paragraphs: writeChapter({
         subject,
         events: rows,
         cohort,

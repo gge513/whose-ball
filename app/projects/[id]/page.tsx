@@ -24,6 +24,7 @@ import {
   createTaskAction,
   defineProjectAction,
   moveTaskAction,
+  retreatStageAction,
   setBallAction,
 } from "../actions";
 
@@ -75,6 +76,7 @@ export default async function ProjectPage({
     viewerId === project.ballHolderId;
 
   const advance = advanceStageAction.bind(null, project.id);
+  const retreatStage = retreatStageAction.bind(null, project.id);
   const define = defineProjectAction.bind(null, project.id);
   const setBall = setBallAction.bind(null, project.id);
   const addTask = createTaskAction.bind(null, project.id);
@@ -112,20 +114,28 @@ export default async function ProjectPage({
                 {s}
               </span>
             ))}
-            {stageIdx < STAGE_ORDER.length - 1 && (
-              <AdvanceGate
-                advance={advance}
-                locked={project.stage === "define" && !defined}
-                missing={
-                  [
-                    project.whoBenefits,
-                    project.whatChanges,
-                    project.doneLooksLike,
-                  ].filter((v) => !v).length
-                }
-                nextStage={STAGE_ORDER[stageIdx + 1]}
-              />
-            )}
+            <AdvanceGate
+              advance={advance}
+              retreat={stageIdx > 0 ? retreatStage : null}
+              locked={project.stage === "define" && !defined}
+              questions={[
+                { label: "who benefits?", answered: !!project.whoBenefits },
+                {
+                  label: "what changes when this ships?",
+                  answered: !!project.whatChanges,
+                },
+                {
+                  label: "what does done look like?",
+                  answered: !!project.doneLooksLike,
+                },
+              ]}
+              nextStage={
+                stageIdx < STAGE_ORDER.length - 1
+                  ? STAGE_ORDER[stageIdx + 1]
+                  : null
+              }
+              prevStage={stageIdx > 0 ? STAGE_ORDER[stageIdx - 1] : null}
+            />
           </div>
         </div>
 
@@ -200,10 +210,16 @@ export default async function ProjectPage({
                 </p>
               )}
             </div>
-          ) : project.nextAction ? (
+          ) : project.ballHolderId ? (
+            /* One existence test everywhere (tune-list #2): a ball is a
+               holder — same predicate as /me and the whistle sweep. A
+               holder with a blank action is a pre-guard row; it renders
+               honestly instead of vanishing, whistle badge included. */
             <p className="mt-2 flex items-center gap-2.5 font-display text-lg font-bold text-ink">
               <span className="ball-dot" />
-              {project.nextAction}
+              {project.nextAction ?? (
+                <span className="text-faint">the next move needs a name</span>
+              )}
               <span className="font-mono text-xs font-normal text-muted">
                 ·{" "}
                 <MemberLink
@@ -241,6 +257,7 @@ export default async function ProjectPage({
               />
               <select
                 name="ballHolderId"
+                required
                 defaultValue={project.ballHolderId ?? ""}
                 className="rounded border border-line bg-panel-2 px-2 py-2 font-mono text-sm text-ink"
               >

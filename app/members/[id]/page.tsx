@@ -111,8 +111,9 @@ export default async function MemberPage({
         </section>
 
         {/* The weekly narrative (ratified): a composed match report per
-            chapter — own motion, then the connective tissue, then one
-            cohort clause. Third person for every reader (provisional). */}
+            chapter — own motion, then the connective tissue as its own
+            paragraph (tune-list #8), then one cohort clause. Third person
+            for every reader (provisional). */}
         <section className="mt-10">
           <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
             the season
@@ -129,9 +130,16 @@ export default async function MemberPage({
                     <span className="text-amber"> · in progress</span>
                   )}
                 </h3>
-                <p className="mt-2 font-display text-base leading-relaxed text-ink">
-                  {r.paragraph}
-                </p>
+                <div className="mt-2 space-y-2">
+                  {r.paragraphs.map((p, i) => (
+                    <p
+                      key={i}
+                      className="font-display text-base leading-relaxed text-ink"
+                    >
+                      {p}
+                    </p>
+                  ))}
+                </div>
               </article>
             ))}
           </div>

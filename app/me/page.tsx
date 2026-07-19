@@ -100,6 +100,7 @@ export default async function MePage() {
       projectName: projects.name,
       whatNeeded: tasks.blockedWhatNeeded,
       since: tasks.blockedAt,
+      waiterId: waiter.id,
       waiterName: waiter.name,
     })
     .from(tasks)
@@ -119,6 +120,7 @@ export default async function MePage() {
       name: projects.name,
       nextAction: projects.nextAction,
       since: projects.updatedAt,
+      waiterId: owner.id,
       waiterName: owner.name,
     })
     .from(projects)
@@ -134,20 +136,26 @@ export default async function MePage() {
       )
     );
 
+  // Card rule (tune-list #1/#3): the project name leads, the mechanic is
+  // the badge — a card you can't place in a project is a card you skip.
   const holding = [
     ...blockedOnMe.map((t) => ({
       key: `task-${t.id}`,
       href: `/projects/${t.projectId}`,
-      label: t.title,
-      sub: `${t.projectName} · needs: ${t.whatNeeded}`,
+      projectName: t.projectName ?? "a project",
+      badge: "blocker names you",
+      detail: `${t.title} · needs: ${t.whatNeeded}`,
+      waiterId: t.waiterId,
       waiterName: t.waiterName,
       since: t.since,
     })),
     ...heldBalls.map((p) => ({
       key: `ball-${p.id}`,
       href: `/projects/${p.id}`,
-      label: p.nextAction ?? `the ball on ${p.name}`,
-      sub: `${p.name} · you hold the ball`,
+      projectName: p.name,
+      badge: "you hold the ball",
+      detail: p.nextAction ?? "the next move needs a name",
+      waiterId: p.waiterId,
       waiterName: p.waiterName,
       since: p.since,
     })),
@@ -250,22 +258,25 @@ export default async function MePage() {
                     <p className="flex items-center gap-3">
                       <span className="ball-dot shrink-0" />
                       <span className="flex-1">
-                        <span className="block font-display text-base font-bold text-ink">
-                          <MemberLink id={p.passerId} name={p.passerName} />{" "}
-                          passed you the ball
-                        </span>
-                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <Link
                             href={`/projects/${p.id}`}
-                            className="hover:text-ball"
+                            className="font-display text-base font-bold text-ink hover:text-ball"
                           >
                             {p.name}
                           </Link>
-                          {p.nextAction && ` · the ask: ${p.nextAction}`} · in
-                          the air{" "}
-                          {fmtElapsed(
-                            (requestNowMs() - p.ballPassedAt.getTime()) / 1000
-                          )}
+                          <span className="rounded border border-ball/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-ball">
+                            pass · in the air{" "}
+                            {fmtElapsed(
+                              (requestNowMs() - p.ballPassedAt.getTime()) /
+                                1000
+                            )}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          <MemberLink id={p.passerId} name={p.passerName} />{" "}
+                          passed you the ball
+                          {p.nextAction && ` · the ask: ${p.nextAction}`}
                         </span>
                       </span>
                     </p>
@@ -301,24 +312,28 @@ export default async function MePage() {
                     <p className="flex items-center gap-3">
                       <span className="ball-dot shrink-0 opacity-50" />
                       <span className="flex-1">
-                        <span className="block font-display text-base font-bold text-amber">
-                          the whistle blew — this ball&apos;s been still for{" "}
-                          {/* stillness started a full whistle-window before
-                              the whistle itself blew */}
-                          {fmtElapsed(
-                            (requestNowMs() - p.whistleBlownAt.getTime()) /
-                              1000 +
-                              WHISTLE_STILL_HOURS * 3600
-                          )}
-                        </span>
-                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <Link
                             href={`/projects/${p.id}`}
-                            className="hover:text-ball"
+                            className="font-display text-base font-bold text-ink hover:text-ball"
                           >
                             {p.name}
                           </Link>
-                          {p.nextAction && ` · the ball: ${p.nextAction}`}
+                          <span className="rounded border border-amber/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber">
+                            whistled · still for{" "}
+                            {/* stillness started a full whistle-window
+                                before the whistle itself blew */}
+                            {fmtElapsed(
+                              (requestNowMs() - p.whistleBlownAt.getTime()) /
+                                1000 +
+                                WHISTLE_STILL_HOURS * 3600
+                            )}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          {p.nextAction
+                            ? `the ball: ${p.nextAction}`
+                            : "the ball never got a name"}
                         </span>
                       </span>
                     </p>
@@ -427,11 +442,16 @@ export default async function MePage() {
                     >
                       <span className="ball-dot shrink-0" />
                       <span className="flex-1">
-                        <span className="block font-display text-base font-bold text-ink">
-                          {p.nextAction ?? "set the next move"}
+                        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                          <span className="font-display text-base font-bold text-ink">
+                            {p.name}
+                          </span>
+                          <span className="rounded border border-ball/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-ball">
+                            your ball · {p.stage}
+                          </span>
                         </span>
                         <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                          {p.name} · {p.stage}
+                          {p.nextAction ?? "set the next move"}
                           {p.nextActionCommittedFor &&
                             p.nextActionCommittedFor > new Date() &&
                             ` · committed for ${p.nextActionCommittedFor.toLocaleDateString()}`}
@@ -466,24 +486,37 @@ export default async function MePage() {
             <>
               <ul className="mt-3 space-y-2">
                 {holdingTop.map((h) => (
-                  <li key={h.key}>
-                    <Link
-                      href={h.href}
-                      className="flex items-baseline gap-3 rounded border border-amber/40 bg-panel p-3 transition-colors hover:border-amber"
-                    >
-                      <span className="flex-1">
-                        <span className="font-mono text-sm text-ink">
-                          {h.label}
-                        </span>
-                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                          {h.sub}
+                  /* A div, not a wrapping link (anchors don't nest): the
+                     project name is the door, the waiter is a person. */
+                  <li
+                    key={h.key}
+                    className="flex items-baseline gap-3 rounded border border-amber/40 bg-panel p-3 transition-colors hover:border-amber"
+                  >
+                    <span className="flex-1">
+                      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <Link
+                          href={h.href}
+                          className="font-display text-sm font-bold text-ink hover:text-ball"
+                        >
+                          {h.projectName}
+                        </Link>
+                        <span className="rounded border border-amber/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber">
+                          {h.badge}
                         </span>
                       </span>
-                      <span className="shrink-0 font-mono text-[11px] text-amber">
-                        {h.waiterName ?? "someone"} waiting
-                        {h.since && ` · ${waitedFor(h.since)}`}
+                      <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                        {h.detail}
                       </span>
-                    </Link>
+                    </span>
+                    <span className="shrink-0 font-mono text-[11px] text-amber">
+                      <MemberLink
+                        id={h.waiterId}
+                        name={h.waiterName}
+                        className="text-amber"
+                      />{" "}
+                      waiting
+                      {h.since && ` · ${waitedFor(h.since)}`}
+                    </span>
                   </li>
                 ))}
               </ul>
