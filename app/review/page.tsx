@@ -103,8 +103,10 @@ export default async function ReviewPage() {
           Review week
         </h1>
         <p className="mt-1 font-mono text-xs text-muted">
-          review every peer, then cast your private ballot — reviews inform,
-          votes decide
+          review every peer, then vote. the official vote is a public{" "}
+          <code className="text-ink">Vote: up</code> line kept in your review
+          issue on their repo — the ballot below is your private tracker, and
+          it syncs itself when your filed issue carries the line.
         </p>
 
         {/* Pace panel */}
@@ -258,7 +260,7 @@ export default async function ReviewPage() {
                                 ? "border-ball bg-ball/15 text-ball"
                                 : "border-line text-muted hover:border-ball hover:text-ink"
                             }`}
-                            title="private thumbs up"
+                            title="tracks your official Vote: up — the vote of record is the line in your review issue"
                           >
                             👍
                           </button>
@@ -272,13 +274,13 @@ export default async function ReviewPage() {
                                 ? "border-amber bg-amber/15 text-amber"
                                 : "border-line text-muted hover:border-amber hover:text-ink"
                             }`}
-                            title="private thumbs down"
+                            title="private note to self — the program has no downvote; leaving Vote: up out of your issue is the official abstain"
                           >
                             👎
                           </button>
                         </form>
                         <span className="font-mono text-[10px] text-faint">
-                          private
+                          private tracker
                         </span>
                       </>
                     ) : (

@@ -8,8 +8,30 @@ import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
 import { reviews, submissions, users, votes } from "@/lib/db/schema";
 import { emitEvent } from "@/lib/events";
-import { findReviewIssue } from "@/lib/github-reviews";
+import { findReviewIssue, issueHasVoteUp } from "@/lib/github-reviews";
 import { deepAssignmentsFor } from "@/lib/review-week";
+
+/**
+ * Sync the in-app ballot to the OFFICIAL vote — the public "Vote: up" line
+ * in the review issue body (current program canon; the app ballot is a
+ * private tracker, never the vote of record). Only a confirmed Vote: up
+ * writes anything: absence or an unreadable issue never clears a thumb,
+ * because abstaining officially and tracking privately are both legitimate.
+ */
+async function syncOfficialVote(
+  voterId: number,
+  submissionId: number,
+  votedUp: boolean | null | undefined
+) {
+  if (votedUp !== true) return;
+  await db
+    .insert(votes)
+    .values({ voterId, submissionId, thumbsUp: true })
+    .onConflictDoUpdate({
+      target: [votes.voterId, votes.submissionId],
+      set: { thumbsUp: true, castAt: new Date() },
+    });
+}
 
 /**
  * Upsert a review row and, only when it's genuinely new, log the feed
@@ -81,6 +103,7 @@ export async function fileReviewAction(
   ).has(submissionId);
 
   await saveReview(userId, submissionId, issueUrl, isDeep);
+  await syncOfficialVote(userId, submissionId, await issueHasVoteUp(issueUrl));
 
   revalidatePath("/review");
 }
@@ -119,6 +142,7 @@ export async function detectReviewAction(submissionId: number) {
   ).has(submissionId);
 
   await saveReview(userId, submissionId, result.issueUrl, isDeep);
+  await syncOfficialVote(userId, submissionId, result.votedUp);
 
   revalidatePath("/review");
 }

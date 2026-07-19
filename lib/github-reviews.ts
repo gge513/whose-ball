@@ -7,7 +7,18 @@
  * network failures all return { found: false, error } — never a throw.
  */
 
-type IssueHit = { html_url: string; title: string };
+type IssueHit = { html_url: string; title: string; body?: string | null };
+
+/**
+ * The official vote (current program canon) is a public "Vote: up" line
+ * kept in the review issue's body — there is no platform ballot and no
+ * downvote. Line-anchored so prose mentioning votes doesn't false-positive;
+ * tolerates markdown emphasis/quote decoration around the line.
+ */
+export function bodyHasVoteUp(body: string | null | undefined): boolean {
+  if (!body) return false;
+  return /(^|\n)[>\s*_#-]*vote\s*:\s*up\b/i.test(body);
+}
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -22,7 +33,12 @@ function authHeaders(): Record<string, string> {
 export async function findReviewIssue(
   repoUrl: string,
   reviewerLogin: string
-): Promise<{ found: boolean; issueUrl?: string; error?: string }> {
+): Promise<{
+  found: boolean;
+  issueUrl?: string;
+  votedUp?: boolean;
+  error?: string;
+}> {
   const match = repoUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/?$/);
   if (!match) return { found: false, error: "not a GitHub repo URL" };
   const [, owner, repo] = match;
@@ -52,11 +68,41 @@ export async function findReviewIssue(
 
       const issues = (await res.json()) as IssueHit[];
       const hit = issues.find((i) => matches(i.title));
-      if (hit) return { found: true, issueUrl: hit.html_url };
+      if (hit)
+        return {
+          found: true,
+          issueUrl: hit.html_url,
+          votedUp: bodyHasVoteUp(hit.body),
+        };
       if (issues.length < 100) break; // last page
     }
     return { found: false, error: "no matching issue" };
   } catch {
     return { found: false, error: "network error" };
+  }
+}
+
+/**
+ * Check a specific review issue (the pasted-URL path) for the official
+ * "Vote: up" line. null = couldn't check (network/rate limit) — callers
+ * must treat null as unknown, never as "no vote".
+ */
+export async function issueHasVoteUp(
+  issueUrl: string
+): Promise<boolean | null> {
+  const m = issueUrl.match(
+    /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/
+  );
+  if (!m) return null;
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${m[1]}/${m[2]}/issues/${m[3]}`,
+      { headers: authHeaders(), next: { revalidate: 0 } }
+    );
+    if (!res.ok) return null;
+    const issue = (await res.json()) as IssueHit;
+    return bodyHasVoteUp(issue.body);
+  } catch {
+    return null;
   }
 }
