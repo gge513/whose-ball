@@ -1,0 +1,1 @@
+ALTER TYPE "public"."event_kind" ADD VALUE 'ball_advanced';

@@ -116,6 +116,7 @@ const OWN_KINDS: ReadonlySet<EventKind> = new Set([
   "submission_merged",
   "review_filed",
   "ball_picked_up",
+  "ball_advanced",
 ] as EventKind[]);
 
 /** Movement two: motion with someone else's name in it. */
@@ -170,6 +171,14 @@ function ownClauses(evs: NarrativeEvent[]): string[] {
   const reviews = by("review_filed");
   if (reviews.length === 1) clauses.push("filed a review");
   else if (reviews.length > 1) clauses.push(`filed ${reviews.length} reviews`);
+
+  const advanced = by("ball_advanced");
+  if (advanced.length === 1)
+    clauses.push(`made the move ${q(advanced[0].detail)} and named the next`);
+  else if (advanced.length > 1)
+    clauses.push(
+      `moved the ball forward ${advanced.length} times, ${q(advanced[advanced.length - 1].detail)} the latest made`
+    );
 
   const pickups = by("ball_picked_up");
   if (pickups.length > 0) {

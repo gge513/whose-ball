@@ -177,6 +177,10 @@ export const eventKind = pgEnum("event_kind", [
   // again. The cause NEVER rides on either event.
   "whistle_blown",
   "ball_picked_up",
+  // The quiet record (ruled 2026-07-19): overwriting your own ball's
+  // action is the ball moving forward — the made move gets witnessed
+  // instead of evaporating. Detail carries the OLD action (the one made).
+  "ball_advanced",
 ]);
 
 // Append-only shipping log. State tables answer "where are things now";

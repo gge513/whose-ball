@@ -213,6 +213,22 @@ export async function setBallAction(projectId: number, formData: FormData) {
       detail: nextAction ?? undefined,
     });
     revalidatePath("/me");
+  } else if (
+    // The quiet record (ruled 2026-07-19): the holder overwriting their
+    // own ball's action IS the move being made — witness it instead of
+    // letting it evaporate. Detail carries the made move. One line per
+    // move stands: a pass or a pickup above already spoke.
+    !holderChanged &&
+    project.ballHolderId === userId &&
+    project.nextAction &&
+    nextAction !== project.nextAction
+  ) {
+    await emitEvent({
+      kind: "ball_advanced",
+      actorId: userId,
+      projectId,
+      detail: project.nextAction,
+    });
   }
 
   revalidatePath(`/projects/${projectId}`);

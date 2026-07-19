@@ -241,5 +241,9 @@ export function feedLine(item: FeedItem): string {
       return item.detail && !item.detail.startsWith("http")
         ? `picked the ball back up — next move: "${item.detail}"`
         : `picked the ball back up`;
+    case "ball_advanced":
+      // detail is the MADE move (the old action); the new one is the
+      // project's live ball, not this line's story.
+      return `made the move on ${item.projectName ?? "a project"} — "${item.detail}"`;
   }
 }
