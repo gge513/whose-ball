@@ -23,6 +23,13 @@ export default async function Home() {
         The cohort task board that always knows your next move. One ball per
         project, one holder, one click back into the work.
       </p>
+      {/* The model in one breath (logged 2026-07-19: the three layers must
+          self-explain) — reviewers arrive cold; this is the whole game. */}
+      <p className="mt-4 max-w-md font-mono text-[11px] leading-relaxed text-faint">
+        three layers: the stages tell the story · the ball names the one next
+        move and whose it is · the tasks are the work. the ball is a pointer,
+        not a task — the feed witnesses what ships.
+      </p>
       <div className="mt-8 flex items-center gap-3">
         <Link
           href="/signin"

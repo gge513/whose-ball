@@ -243,7 +243,13 @@ export default async function ProjectPage({
               No ball set. What&apos;s the next move, and whose is it?
             </p>
           )}
-          <details className="mt-3">
+          {/* The whisper (logged 2026-07-19: the ball/task decoupling must
+              self-explain — it stumped its own designer mid-use) */}
+          <p className="mt-2.5 font-mono text-[10px] text-faint">
+            the ball is the next move, not a task — the work lives on the
+            board below
+          </p>
+          <details className="mt-2">
             <summary className="cursor-pointer font-mono text-xs text-muted hover:text-ink">
               set or pass the ball
             </summary>
@@ -287,6 +293,39 @@ export default async function ProjectPage({
             </form>
           </details>
         </section>
+
+        {/* The explainer (same details pattern as the ball controls): the
+            three-layer model, stated once, where the layers meet. */}
+        <details className="mt-2 px-1">
+          <summary className="cursor-pointer font-mono text-[11px] text-faint hover:text-muted">
+            how this works
+          </summary>
+          <div className="mt-2 space-y-2 rounded border border-line-soft bg-panel p-4 font-mono text-xs leading-relaxed text-muted">
+            <p>
+              <span className="font-bold text-ink">the stages</span> are the
+              story — how far this project&apos;s tale has gotten. advancing
+              is public, and there&apos;s a reverse gear.
+            </p>
+            <p>
+              <span className="font-bold text-ink">the ball</span> is the one
+              next move and whose it is. a pointer, not a task: when the move
+              is made you name the next one, or pass it — a pass is theirs
+              when they catch it by naming their first action, and 24h
+              uncaught is a drop.
+            </p>
+            <p>
+              <span className="font-bold text-ink">the tasks</span> are the
+              work — as many as it takes, each with its own person. most task
+              motion is private; only done and blocked speak in the feed.
+            </p>
+            <p>
+              the layers touch in three places: task motion keeps the whistle
+              quiet (48h of total stillness whistles a held ball) · whistle
+              remedies route into the board · a blocked task names who can
+              unblock it, and clearing it scores the assist.
+            </p>
+          </div>
+        </details>
 
         {/* Define */}
         <section
