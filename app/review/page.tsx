@@ -104,10 +104,15 @@ export default async function ReviewPage() {
           Review week
         </h1>
         <p className="mt-1 font-mono text-xs text-muted">
-          review every peer, then vote. the official vote is a public{" "}
-          <code className="text-ink">Vote: up</code> line kept in your review
-          issue on their repo — the ballot below is your private tracker, and
-          it syncs itself when your filed issue carries the line.
+          review every peer, then vote. a review is a GitHub issue titled{" "}
+          <code className="text-ink">Review by @your-handle</code> on the
+          peer&apos;s repo — write it there first, then record it here:{" "}
+          <span className="text-ink">detect from GitHub</span> finds your
+          issue on their repo automatically, or paste its URL if detection
+          can&apos;t (rate limit, unusual title). the official vote is a
+          public <code className="text-ink">Vote: up</code> line kept in that
+          issue — the ballot below is your private tracker, and it syncs
+          itself when your filed issue carries the line.
         </p>
 
         {/* Pace panel */}
