@@ -56,6 +56,9 @@ export async function defineProjectAction(
   projectId: number,
   formData: FormData
 ) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   await db
     .update(projects)
     .set({
@@ -579,6 +582,9 @@ export async function moveTaskAction(
 
 /** Archive, never destroy: ids stay retired, references keep resolving. */
 export async function archiveTaskAction(taskId: number, projectId: number) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   await db
     .update(tasks)
     .set({ archivedAt: new Date(), updatedAt: new Date() })
@@ -587,11 +593,26 @@ export async function archiveTaskAction(taskId: number, projectId: number) {
   revalidatePath(`/projects/${projectId}`);
 }
 
+/**
+ * Retiring a whole project is the one move reserved for its owner. The rest of
+ * the app is deliberately flat — a teammate can advance your stage, catch your
+ * ball, move your tasks, because that shared motion is the point. Archiving is
+ * different: it ends the story rather than moving it.
+ */
 export async function archiveProjectAction(projectId: number) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
   await db
     .update(projects)
     .set({ archivedAt: new Date(), updatedAt: new Date() })
-    .where(and(eq(projects.id, projectId), isNull(projects.archivedAt)));
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.ownerId, userId),
+        isNull(projects.archivedAt)
+      )
+    );
 
   revalidatePath("/projects");
   redirect("/projects");

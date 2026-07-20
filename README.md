@@ -48,7 +48,7 @@ Prereqs: Node 20+, a Postgres database (built against [Neon](https://neon.tech);
 git clone <this repo> && cd whose-ball
 cp .env.local.example .env.local   # fill the five values, see comments
 npm install
-# apply migrations in order (drizzle/0000 ... 0005) against your DATABASE_URL,
+# apply migrations in order (drizzle/0000 ... 0006) against your DATABASE_URL,
 # e.g. paste each file into the Neon SQL editor. Do NOT use `drizzle-kit push`
 # against a live database: its diff can propose destructive truncates.
 npm run dev

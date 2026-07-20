@@ -605,14 +605,16 @@ export default async function ProjectPage({
           )}
         </section>
 
-        <form action={archiveProject} className="mt-10 border-t border-line-soft pt-4">
-          <button
-            type="submit"
-            className="font-mono text-[11px] text-faint hover:text-amber"
-          >
-            archive this project
-          </button>
-        </form>
+        {viewerId === project.ownerId && (
+          <form action={archiveProject} className="mt-10 border-t border-line-soft pt-4">
+            <button
+              type="submit"
+              className="font-mono text-[11px] text-faint hover:text-amber"
+            >
+              archive this project
+            </button>
+          </form>
+        )}
       </main>
     </div>
   );
