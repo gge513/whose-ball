@@ -18,6 +18,7 @@ import { fmtElapsed } from "@/lib/events";
 import { requestNowMs } from "@/lib/journey";
 import { sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
+import { currentWorkspace } from "@/lib/workspace";
 import {
   WHISTLE_CAUSES,
   WHISTLE_STILL_HOURS,
@@ -65,6 +66,7 @@ export default async function MePage() {
   await sweepWhistles(); // then still balls get whistled (drops reset the clock)
 
   const [me] = await db.select().from(users).where(eq(users.id, userId));
+  const wsVision = (await currentWorkspace()).vision;
 
   const passer = alias(users, "passer");
   const myBalls = await db
@@ -232,6 +234,17 @@ export default async function MePage() {
             your season →
           </Link>
         </h1>
+
+        {/* The vision (v3): the shared why, in view every time you enter
+            your court. Set and revised on the momentum page. */}
+        {wsVision && (
+          <p className="mt-1.5 font-mono text-xs text-muted">
+            <span className="uppercase tracking-wide text-faint">
+              the vision ·{" "}
+            </span>
+            {wsVision}
+          </p>
+        )}
 
         {/* The balls: next actions with handles */}
         <section className="mt-6">

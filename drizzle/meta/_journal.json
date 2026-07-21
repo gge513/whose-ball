@@ -50,6 +50,13 @@
       "when": 1784498697047,
       "tag": "0006_awesome_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784660703698,
+      "tag": "0007_needy_redwing",
+      "breakpoints": true
     }
   ]
 }

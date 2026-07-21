@@ -6,7 +6,8 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { projects, tasks, users } from "@/lib/db/schema";
+import { goals, projects, tasks, users } from "@/lib/db/schema";
+import { currentWorkspace } from "@/lib/workspace";
 import { convertAssistsFor, emitEvent } from "@/lib/events";
 import { RALLY_DROP_MS, sweepDrops } from "@/lib/rally";
 import { STAGE_ORDER } from "@/lib/stages";
@@ -36,9 +37,10 @@ export async function createProjectAction(formData: FormData) {
   const name = str(formData, "name");
   if (!name) return;
 
+  const ws = await currentWorkspace();
   const [created] = await db
     .insert(projects)
-    .values({ name, ownerId: userId })
+    .values({ name, ownerId: userId, workspaceId: ws.id })
     .returning({ id: projects.id });
 
   await emitEvent({
@@ -616,4 +618,69 @@ export async function archiveProjectAction(projectId: number) {
 
   revalidatePath("/projects");
   redirect("/projects");
+}
+
+/**
+ * Goals carry the Foundation-canon DNA: an outcome a stranger could grade.
+ * The statement says what; the key result is the measure that makes it
+ * gradeable — both required, by the same loud-failure logic as the enums.
+ */
+export async function addGoalAction(projectId: number, formData: FormData) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const statement = str(formData, "statement");
+  const keyResult = str(formData, "keyResult");
+  if (!statement || !keyResult) return;
+
+  const ownerRaw = str(formData, "ownerId");
+  await db.insert(goals).values({
+    projectId,
+    statement,
+    keyResult,
+    ownerId: ownerRaw ? Number(ownerRaw) : userId,
+    timeline: str(formData, "timeline"),
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/**
+ * Grading a goal ends its story one of two ways, and both are kept: met
+ * gets witnessed in the feed; dropped is recorded in place with its why
+ * (the canon's "Decided: closed" rows) — a ruled-out goal is a decision,
+ * not an embarrassment, and it is never deleted.
+ */
+export async function gradeGoalAction(
+  goalId: number,
+  projectId: number,
+  formData: FormData
+) {
+  const userId = await currentDbUserId();
+  if (!userId) redirect("/signin");
+
+  const verdict = str(formData, "verdict");
+  if (verdict !== "met" && verdict !== "dropped") return;
+
+  const [graded] = await db
+    .update(goals)
+    .set({
+      status: verdict,
+      statusNote: str(formData, "statusNote"),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(goals.id, goalId), eq(goals.status, "open")))
+    .returning({ statement: goals.statement });
+  if (!graded) return;
+
+  if (verdict === "met") {
+    await emitEvent({
+      kind: "goal_met",
+      actorId: userId,
+      projectId,
+      detail: graded.statement,
+    });
+  }
+
+  revalidatePath(`/projects/${projectId}`);
 }

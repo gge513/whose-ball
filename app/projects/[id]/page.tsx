@@ -8,7 +8,8 @@ import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { currentDbUserId } from "@/lib/current-user";
 import { db } from "@/lib/db";
-import { projects, tasks, users } from "@/lib/db/schema";
+import { goals, projects, tasks } from "@/lib/db/schema";
+import { workspacePeople } from "@/lib/workspace";
 import { fmtElapsed } from "@/lib/events";
 import { requestNowMs } from "@/lib/journey";
 import { sweepDrops } from "@/lib/rally";
@@ -17,12 +18,14 @@ import { sweepWhistles } from "@/lib/whistle";
 import { STAGE_ORDER } from "@/lib/stages";
 
 import {
+  addGoalAction,
   advanceStageAction,
   archiveProjectAction,
   archiveTaskAction,
   catchBallAction,
   createTaskAction,
   defineProjectAction,
+  gradeGoalAction,
   moveTaskAction,
   retreatStageAction,
   setBallAction,
@@ -56,9 +59,15 @@ export default async function ProjectPage({
     .where(and(eq(tasks.projectId, projectId), isNull(tasks.archivedAt)))
     .orderBy(asc(tasks.createdAt));
 
-  const people = await db.select().from(users);
+  const people = await workspacePeople();
   const nameOf = (uid: number | null) =>
     people.find((p) => p.id === uid)?.name ?? "—";
+
+  const projectGoals = await db
+    .select()
+    .from(goals)
+    .where(eq(goals.projectId, projectId))
+    .orderBy(asc(goals.createdAt));
 
   const stageIdx = STAGE_ORDER.indexOf(project.stage);
   const defined = Boolean(
@@ -367,6 +376,128 @@ export default async function ProjectPage({
               save answers
             </button>
           </form>
+        </section>
+
+        {/* Goals: what the work is for. Canon DNA — statement + gradeable
+            key result + owner + timeline; dropped goals stay visible with
+            their why, met goals get witnessed in the feed. */}
+        <section className="mt-4 rounded border border-line bg-panel p-5">
+          <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
+            goals{" "}
+            <span className="text-faint">
+              · outcomes a stranger could grade — the tasks below are the work
+            </span>
+          </h2>
+          {projectGoals.length > 0 && (
+            <ul className="mt-3 space-y-2.5">
+              {projectGoals.map((g) => (
+                <li
+                  key={g.id}
+                  className={`font-mono text-xs ${g.status === "dropped" ? "opacity-60" : ""}`}
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span
+                      className={`font-bold ${g.status === "dropped" ? "text-muted line-through" : "text-ink"}`}
+                    >
+                      {g.statement}
+                    </span>
+                    {g.status === "met" && (
+                      <span className="text-posted">✓ met</span>
+                    )}
+                    {g.status === "dropped" && (
+                      <span className="text-faint">decided: closed</span>
+                    )}
+                    {g.status === "open" && (
+                      <span className="flex gap-2">
+                        <form
+                          action={gradeGoalAction.bind(null, g.id, project.id)}
+                        >
+                          <input type="hidden" name="verdict" value="met" />
+                          <button
+                            type="submit"
+                            className="rounded border border-line px-2 py-0.5 text-[10px] text-muted hover:border-muted hover:text-ink"
+                            title="grade it met — the feed witnesses it"
+                          >
+                            met
+                          </button>
+                        </form>
+                        <form
+                          action={gradeGoalAction.bind(null, g.id, project.id)}
+                        >
+                          <input type="hidden" name="verdict" value="dropped" />
+                          <input type="hidden" name="statusNote" value="" />
+                          <button
+                            type="submit"
+                            className="rounded border border-line px-2 py-0.5 text-[10px] text-muted hover:border-muted hover:text-ink"
+                            title="decide against it — recorded openly, never deleted"
+                          >
+                            drop
+                          </button>
+                        </form>
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-muted">
+                    measure: {g.keyResult}
+                    <span className="text-faint">
+                      {" "}
+                      · {nameOf(g.ownerId)}
+                      {g.timeline ? ` · ${g.timeline}` : ""}
+                      {g.statusNote ? ` · ${g.statusNote}` : ""}
+                    </span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <details className="mt-3">
+            <summary className="cursor-pointer font-mono text-xs text-muted hover:text-ink">
+              + add a goal
+            </summary>
+            <form
+              action={addGoalAction.bind(null, project.id)}
+              className="mt-3 flex flex-wrap gap-2"
+            >
+              <input
+                name="statement"
+                required
+                placeholder="the outcome (what changes)"
+                className="min-w-64 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-muted focus:outline-none"
+              />
+              <input
+                name="keyResult"
+                required
+                placeholder="the measure a stranger could grade"
+                className="min-w-64 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-muted focus:outline-none"
+              />
+              <select
+                name="ownerId"
+                className="rounded border border-line bg-panel-2 px-2 py-2 font-mono text-xs text-ink"
+              >
+                <option value="">owner: you</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="timeline"
+                placeholder="timeline (Q3, full year…)"
+                className="w-40 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-muted focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="rounded bg-ink px-3 py-2 font-mono text-xs font-bold text-court hover:bg-white"
+              >
+                set goal
+              </button>
+              <p className="w-full font-mono text-[10px] text-faint">
+                if it can&apos;t be graded by a stranger, it&apos;s not a goal
+                yet — the measure makes it one
+              </p>
+            </form>
+          </details>
         </section>
 
         {/* Blocked — help wanted, visible */}

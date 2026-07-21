@@ -6,6 +6,7 @@ import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
 import { projects, tasks, users } from "@/lib/db/schema";
+import { currentWorkspace, workspacePeople } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -49,11 +50,14 @@ export default async function TasksPage({
     .where(and(...conditions))
     .orderBy(asc(tasks.createdAt));
 
-  const people = await db.select().from(users);
+  const people = await workspacePeople();
+  const ws = await currentWorkspace();
   const projectList = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
-    .where(isNull(projects.archivedAt));
+    .where(
+      and(isNull(projects.archivedAt), eq(projects.workspaceId, ws.id))
+    );
 
   return (
     <div className="min-h-screen">

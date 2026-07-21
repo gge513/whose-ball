@@ -43,6 +43,33 @@ export const taskStatus = pgEnum("task_status", [
   "blocked",
 ]);
 
+// The workspace: the container a team lives in (v3 lock 1). The cohort is
+// workspace #1; the next one is a real team. No roles yet — everyone in a
+// workspace is a member, consistent with the app's flat-authz stance.
+export const workspaces = pgTable("workspaces", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  // The vision (v3 lock 4): the one shared why the workspace's projects
+  // ladder into. Rendered on /me and momentum; goals live on projects.
+  vision: text("vision"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const workspaceMembers = pgTable(
+  "workspace_members",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .references(() => workspaces.id)
+      .notNull(),
+    userId: integer("user_id")
+      .references(() => users.id)
+      .notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.workspaceId, t.userId)]
+);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").unique(),
@@ -58,6 +85,9 @@ export const users = pgTable("users", {
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  workspaceId: integer("workspace_id")
+    .references(() => workspaces.id)
+    .notNull(),
   ownerId: integer("owner_id")
     .references(() => users.id)
     .notNull(),
@@ -181,6 +211,9 @@ export const eventKind = pgEnum("event_kind", [
   // action is the ball moving forward — the made move gets witnessed
   // instead of evaporating. Detail carries the OLD action (the one made).
   "ball_advanced",
+  // A goal graded met is exactly the kind of moment the feed exists to
+  // witness. Dropping one is recorded on the project, not paraded here.
+  "goal_met",
 ]);
 
 // Append-only shipping log. State tables answer "where are things now";
@@ -201,6 +234,32 @@ export const events = pgTable("events", {
   // not points — the feed states it, the momentum median tile reads it).
   elapsedS: integer("elapsed_s"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Project goals (v3 lock 3, Foundation-canon DNA): a goal is an OUTCOME a
+// stranger could grade — statement + key result (the measure) + owner +
+// timeline. Tasks are the work; goals are what the work is for. "dropped"
+// records a decided-not-to-do with the same dignity as active goals (the
+// canon's "Decided: closed" rows) — a ruled-out goal is never deleted.
+export const goalStatus = pgEnum("goal_status", ["open", "met", "dropped"]);
+
+export const goals = pgTable("goals", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id")
+    .references(() => projects.id)
+    .notNull(),
+  statement: text("statement").notNull(),
+  // "If a goal can't be graded by a stranger at year-end, it's not a goal
+  // yet" — the measure is required, not optional.
+  keyResult: text("key_result").notNull(),
+  ownerId: integer("owner_id").references(() => users.id),
+  // Prose, like the canon's own tables: "Q1–Q2", "Full year", "by Sep 30".
+  timeline: text("timeline"),
+  status: goalStatus("status").default("open").notNull(),
+  // Why it was dropped, or how it was met — the honest one-liner.
+  statusNote: text("status_note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const tasks = pgTable("tasks", {

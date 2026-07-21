@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { signIn } from "@/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { enrollInDefaultWorkspace } from "@/lib/workspace";
 
 export async function registerAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -35,7 +36,11 @@ export async function registerAction(formData: FormData) {
   // Never store the password itself: bcrypt hashes are one-way, salted,
   // and deliberately slow — a database leak does not become a password leak.
   const passwordHash = await bcrypt.hash(password, 10);
-  await db.insert(users).values({ name, email, passwordHash });
+  const [created] = await db
+    .insert(users)
+    .values({ name, email, passwordHash })
+    .returning({ id: users.id });
+  await enrollInDefaultWorkspace(created.id);
 
   await signIn("credentials", { email, password, redirectTo: "/me" });
 }

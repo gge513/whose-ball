@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { asc, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { AuthButtons } from "@/app/components/auth-buttons";
 import { MemberLink } from "@/app/components/member-link";
 import { SiteHeader } from "@/app/components/site-header";
 import { db } from "@/lib/db";
-import { projects, tasks, users } from "@/lib/db/schema";
+import { projects, tasks } from "@/lib/db/schema";
+import { currentWorkspace, workspacePeople } from "@/lib/workspace";
 
 import { STAGE_ORDER } from "@/lib/stages";
 
@@ -14,10 +15,13 @@ import { createProjectAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
+  const ws = await currentWorkspace();
   const rows = await db
     .select()
     .from(projects)
-    .where(isNull(projects.archivedAt))
+    .where(
+      and(isNull(projects.archivedAt), eq(projects.workspaceId, ws.id))
+    )
     .orderBy(asc(projects.createdAt));
 
   const allTasks = await db
@@ -25,7 +29,7 @@ export default async function ProjectsPage() {
     .from(tasks)
     .where(isNull(tasks.archivedAt));
 
-  const people = await db.select().from(users);
+  const people = await workspacePeople();
   const nameOf = (id: number | null) =>
     people.find((p) => p.id === id)?.name ?? null;
 

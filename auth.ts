@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { enrollInDefaultWorkspace } from "@/lib/workspace";
 
 /**
  * Auth.js v5, two doors into the same users table:
@@ -73,6 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               })
               .returning({ id: users.id });
             token.dbUserId = row.id;
+            await enrollInDefaultWorkspace(row.id);
           } catch {
             // Rare edge: the GitHub email already belongs to a
             // password account. Link GitHub onto that row instead.

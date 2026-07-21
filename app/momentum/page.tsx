@@ -11,6 +11,9 @@ import {
 } from "@/lib/events";
 import { sweepDrops } from "@/lib/rally";
 import { sweepWhistles } from "@/lib/whistle";
+import { currentWorkspace } from "@/lib/workspace";
+
+import { setVisionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -55,13 +58,18 @@ const KIND_COLOR: Record<string, string> = {
   ball_dropped: "text-amber",
   whistle_blown: "text-amber",
   ball_picked_up: "text-ball",
+  goal_met: "text-posted",
 };
 
 export default async function MomentumPage() {
   await sweepDrops(); // overdue passes become drops before we render
   await sweepWhistles(); // then still balls get whistled (drops reset the clock)
 
-  const [tiles, feed] = await Promise.all([loadMomentumTiles(), loadFeed(50)]);
+  const [tiles, feed, ws] = await Promise.all([
+    loadMomentumTiles(),
+    loadFeed(50),
+    currentWorkspace(),
+  ]);
 
   const tileDefs: {
     label: string;
@@ -109,6 +117,45 @@ export default async function MomentumPage() {
         <p className="mt-1 font-mono text-[11px] text-faint">
           what the cohort is shipping · nobody is ranked here
         </p>
+
+        {/* The vision (v3): the one shared why the projects ladder into —
+            the season story below reads as progress toward it. */}
+        <section className="mt-5 rounded border border-line bg-panel p-4">
+          <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
+            the vision
+          </h2>
+          {ws.vision ? (
+            <p className="mt-1.5 font-display text-lg leading-relaxed text-ink">
+              {ws.vision}
+            </p>
+          ) : (
+            <p className="mt-1.5 font-mono text-xs text-faint">
+              not yet named — what does this workspace exist to make true?
+            </p>
+          )}
+          <details className="mt-2">
+            <summary className="cursor-pointer font-mono text-[11px] text-faint hover:text-muted">
+              {ws.vision ? "revise the vision" : "set the vision"}
+            </summary>
+            <form
+              action={setVisionAction}
+              className="mt-2 flex flex-wrap gap-2"
+            >
+              <input
+                name="vision"
+                defaultValue={ws.vision ?? ""}
+                placeholder="one sentence the projects ladder into"
+                className="min-w-64 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-muted focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="rounded bg-ink px-3 py-2 font-mono text-xs font-bold text-court hover:bg-white"
+              >
+                set
+              </button>
+            </form>
+          </details>
+        </section>
 
         {/* The full journey spine: the only page that shows the whole week */}
         <section className="mt-6">
