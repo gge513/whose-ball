@@ -41,15 +41,15 @@ function ago(d: Date): string {
 }
 
 const KIND_COLOR: Record<string, string> = {
-  task_done: "text-ball",
-  stage_advanced: "text-ball",
-  submission_merged: "text-ball",
+  task_done: "text-posted",
+  stage_advanced: "text-posted",
+  submission_merged: "text-posted",
   review_filed: "text-ink",
   project_created: "text-ink",
   blocker_raised: "text-amber",
-  blocker_cleared: "text-ball",
+  blocker_cleared: "text-posted",
   assist: "text-posted",
-  assist_converted: "text-ball",
+  assist_converted: "text-posted",
   ball_passed: "text-ink",
   ball_caught: "text-ball",
   ball_dropped: "text-amber",
@@ -174,7 +174,7 @@ export default async function MomentumPage() {
                       <>
                         <Link
                           href={`/members/${item.actorId}`}
-                          className="font-bold hover:text-ball"
+                          className="font-bold hover:underline"
                         >
                           {item.actorName}
                         </Link>{" "}
@@ -186,7 +186,7 @@ export default async function MomentumPage() {
                       item.kind !== "stage_advanced" && (
                         <Link
                           href={`/projects/${item.projectId}`}
-                          className="text-faint hover:text-ball"
+                          className="text-faint hover:text-muted"
                         >
                           {" "}
                           in {item.projectName}

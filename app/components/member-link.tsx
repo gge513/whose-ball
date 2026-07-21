@@ -21,7 +21,7 @@ export function MemberLink({
   return (
     <Link
       href={`/members/${id}`}
-      className={`hover:text-ball hover:underline ${className}`}
+      className={`hover:underline ${className}`}
     >
       {label}
     </Link>

@@ -52,7 +52,7 @@ export default async function MePage() {
           </p>
           <Link
             href="/signin"
-            className="mt-4 inline-block rounded bg-ball px-4 py-2 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+            className="mt-4 inline-block rounded bg-ink px-4 py-2 font-mono text-sm font-bold text-court hover:bg-white"
           >
             sign in
           </Link>
@@ -222,12 +222,12 @@ export default async function MePage() {
         </Link>
 
         <h1 className="mt-8 flex flex-wrap items-baseline gap-x-4 font-display text-2xl font-extrabold uppercase tracking-[0.08em]">
-          <Link href={`/members/${userId}`} className="hover:text-ball">
+          <Link href={`/members/${userId}`} className="hover:underline">
             {me?.name ?? "you"}
           </Link>
           <Link
             href={`/members/${userId}`}
-            className="font-mono text-xs font-normal normal-case tracking-normal text-muted hover:text-ball"
+            className="font-mono text-xs font-normal normal-case tracking-normal text-muted hover:text-ink"
           >
             your season →
           </Link>
@@ -241,7 +241,7 @@ export default async function MePage() {
           {myBalls.length === 0 ? (
             <p className="mt-2 font-mono text-sm text-faint">
               Nothing in your court.{" "}
-              <Link href="/projects" className="text-ball hover:underline">
+              <Link href="/projects" className="text-ink underline">
                 Browse projects →
               </Link>
             </p>
@@ -261,7 +261,7 @@ export default async function MePage() {
                         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <Link
                             href={`/projects/${p.id}`}
-                            className="font-display text-base font-bold text-ink hover:text-ball"
+                            className="font-display text-base font-bold text-ink hover:underline"
                           >
                             {p.name}
                           </Link>
@@ -315,7 +315,7 @@ export default async function MePage() {
                         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <Link
                             href={`/projects/${p.id}`}
-                            className="font-display text-base font-bold text-ink hover:text-ball"
+                            className="font-display text-base font-bold text-ink hover:underline"
                           >
                             {p.name}
                           </Link>
@@ -496,7 +496,7 @@ export default async function MePage() {
                       <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                         <Link
                           href={h.href}
-                          className="font-display text-sm font-bold text-ink hover:text-ball"
+                          className="font-display text-sm font-bold text-ink hover:underline"
                         >
                           {h.projectName}
                         </Link>
@@ -550,7 +550,7 @@ export default async function MePage() {
                       <span className="text-muted">{t.projectName}</span>
                       <span
                         className={
-                          t.status === "blocked" ? "text-amber" : "text-ball"
+                          t.status === "blocked" ? "text-amber" : "text-ink"
                         }
                       >
                         {t.status}

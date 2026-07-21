@@ -50,11 +50,11 @@ export default async function ProjectsPage() {
               name="name"
               required
               placeholder="new project name"
-              className="rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+              className="rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
             />
             <button
               type="submit"
-              className="rounded bg-ball px-3 py-2 font-mono text-sm font-bold text-court transition-colors hover:bg-ball-deep"
+              className="rounded bg-ink px-3 py-2 font-mono text-sm font-bold text-court transition-colors hover:bg-white"
             >
               create
             </button>
@@ -82,11 +82,11 @@ export default async function ProjectsPage() {
 
               return (
                 <li key={p.id}>
-                  <div className="block rounded border border-line bg-panel p-5 transition-colors hover:border-ball/40">
+                  <div className="block rounded border border-line bg-panel p-5 transition-colors hover:border-muted">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <Link
                         href={`/projects/${p.id}`}
-                        className="font-display text-lg font-bold text-ink hover:text-ball"
+                        className="font-display text-lg font-bold text-ink hover:underline"
                       >
                         {p.name}
                       </Link>
@@ -96,7 +96,7 @@ export default async function ProjectsPage() {
                             key={s}
                             className={
                               i === stageIdx
-                                ? "rounded bg-ball px-1.5 py-0.5 font-bold text-court"
+                                ? "rounded bg-ink px-1.5 py-0.5 font-bold text-court"
                                 : i < stageIdx
                                   ? "text-posted"
                                   : "text-faint"

@@ -5,6 +5,10 @@
   Warm near-black court, one sharp signature accent (electric lime = the ball,
   the thing in play). Monospace for data, a characterful display face for the
   wordmark and titles. The ball glows where it is live.
+
+  Lime is possession only: the ball glyph, ball chips, and ball actions
+  (catch / set / pick up). Buttons, links, focus rings, and status marks
+  stay neutral so the accent keeps its meaning.
 */
 
 :root {
@@ -15,8 +19,8 @@
   --line: #282c19;
   --line-soft: #1e2113;
   --ink: #edeee2;
-  --muted: #8d9279;
-  --faint: #565b46;
+  --muted: #a4a98e;
+  --faint: #6f755c;
 
   --ball: #c8f522; /* signature lime, the ball in play */
   --ball-deep: #9bd400;
@@ -159,4 +163,17 @@ body {
 }
 .gate-flash {
   animation: gate-flash 1.4s ease-out;
+}
+
+/* Reduced motion: the ball still reads as lime, it just holds still. */
+@media (prefers-reduced-motion: reduce) {
+  .ball-dot,
+  .reveal,
+  .gate-shake,
+  .gate-flash {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+  }
 }

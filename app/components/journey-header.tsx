@@ -100,10 +100,10 @@ export async function JourneyHeader() {
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-1.5 font-mono text-[11px]">
         <Link
           href="/momentum"
-          className="flex items-center gap-1.5 text-ink transition-colors hover:text-ball"
+          className="flex items-center gap-1.5 text-ink hover:underline"
           title="the week's journey — full spine on the momentum page"
         >
-          <span className="text-ball">●</span>
+          <span className="text-ink">●</span>
           <span className="uppercase tracking-[0.14em]">{phase.label}</span>
         </Link>
         {phase.deadline && (
@@ -146,7 +146,7 @@ export function JourneySpine({ now = new Date() }: { now?: Date }) {
             key={p.key}
             className={`rounded border p-4 ${
               state === "live"
-                ? "border-ball/40 bg-panel"
+                ? "border-line bg-panel"
                 : "border-line-soft bg-panel"
             } ${state === "ahead" ? "opacity-60" : ""}`}
           >

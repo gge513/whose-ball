@@ -105,7 +105,7 @@ export default async function ProjectPage({
                 key={s}
                 className={
                   i === stageIdx
-                    ? "rounded bg-ball px-2 py-1 font-bold text-court"
+                    ? "rounded bg-ink px-2 py-1 font-bold text-court"
                     : i < stageIdx
                       ? "text-posted"
                       : "text-faint"
@@ -356,13 +356,13 @@ export default async function ProjectPage({
                   name={name}
                   rows={2}
                   defaultValue={value ?? ""}
-                  className="mt-1 w-full rounded border border-line bg-panel-2 px-2.5 py-2 font-mono text-xs text-ink focus:border-ball focus:outline-none"
+                  className="mt-1 w-full rounded border border-line bg-panel-2 px-2.5 py-2 font-mono text-xs text-ink focus:border-muted focus:outline-none"
                 />
               </label>
             ))}
             <button
               type="submit"
-              className="w-fit rounded border border-line px-3 py-1.5 font-mono text-xs text-muted hover:border-ball hover:text-ink"
+              className="w-fit rounded border border-line px-3 py-1.5 font-mono text-xs text-muted hover:border-muted hover:text-ink"
             >
               save answers
             </button>
@@ -401,8 +401,17 @@ export default async function ProjectPage({
             <h2 className="font-mono text-[11px] uppercase tracking-wide text-muted">
               tasks
             </h2>
-            <details id="new-task" open={whistleWantsSplit}>
-              <summary className="cursor-pointer rounded bg-ball px-3 py-1.5 font-mono text-xs font-bold text-court hover:bg-ball-deep">
+            {/* Open on an empty board so the first task doesn't hide behind
+                a click; keyed on task count so a successful create remounts
+                it closed — the native toggle never reaches React, so without
+                the key the popover lingers after submit (review feedback,
+                2026-07-21). */}
+            <details
+              id="new-task"
+              key={projectTasks.length}
+              open={whistleWantsSplit || projectTasks.length === 0}
+            >
+              <summary className="cursor-pointer rounded bg-ink px-3 py-1.5 font-mono text-xs font-bold text-court hover:bg-white">
                 + new task
               </summary>
               <form
@@ -413,7 +422,7 @@ export default async function ProjectPage({
                   name="title"
                   required
                   placeholder="task title"
-                  className="w-full rounded border border-line bg-panel px-2.5 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+                  className="w-full rounded border border-line bg-panel px-2.5 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
                 />
                 <textarea
                   name="description"
@@ -439,7 +448,7 @@ export default async function ProjectPage({
                 </select>
                 <button
                   type="submit"
-                  className="rounded bg-ball px-3 py-1.5 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                  className="rounded bg-ink px-3 py-1.5 font-mono text-xs font-bold text-court hover:bg-white"
                 >
                   create task
                 </button>
@@ -500,7 +509,7 @@ export default async function ProjectPage({
                             </select>
                             <button
                               type="submit"
-                              className="rounded border border-line px-2 py-1 font-mono text-[11px] text-muted hover:border-ball hover:text-ink"
+                              className="rounded border border-line px-2 py-1 font-mono text-[11px] text-muted hover:border-muted hover:text-ink"
                             >
                               move
                             </button>
@@ -592,7 +601,7 @@ export default async function ProjectPage({
                         </select>
                         <button
                           type="submit"
-                          className="rounded border border-line px-2 py-1 font-mono text-[11px] text-muted hover:border-ball hover:text-ink"
+                          className="rounded border border-line px-2 py-1 font-mono text-[11px] text-muted hover:border-muted hover:text-ink"
                         >
                           unblock →
                         </button>

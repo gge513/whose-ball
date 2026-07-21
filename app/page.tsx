@@ -33,13 +33,13 @@ export default async function Home() {
       <div className="mt-8 flex items-center gap-3">
         <Link
           href="/signin"
-          className="rounded bg-ball px-5 py-2.5 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+          className="rounded bg-ink px-5 py-2.5 font-mono text-sm font-bold text-court hover:bg-white"
         >
           sign in
         </Link>
         <Link
           href="/signup"
-          className="rounded border border-line px-5 py-2.5 font-mono text-sm text-ink hover:border-ball"
+          className="rounded border border-line px-5 py-2.5 font-mono text-sm text-ink hover:border-muted"
         >
           create account
         </Link>

@@ -41,7 +41,7 @@ export function Countdown({
     <span
       suppressHydrationWarning
       className={`tabular-nums ${
-        msLeft <= 0 ? "text-faint" : urgent ? "text-amber" : "text-ball"
+        msLeft <= 0 ? "text-faint" : urgent ? "text-amber" : "text-ink"
       }`}
     >
       {remaining(msLeft)}

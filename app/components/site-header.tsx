@@ -26,7 +26,7 @@ export function SiteHeader({
       }`}
     >
       {label}
-      {active === key && <span className="ml-1.5 text-ball">●</span>}
+      {active === key && <span className="ml-1.5 text-ink">●</span>}
     </Link>
   );
 

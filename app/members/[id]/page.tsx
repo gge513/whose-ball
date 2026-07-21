@@ -98,7 +98,7 @@ export default async function MemberPage({
             </span>
           </div>
           <div className="rounded border border-line-soft bg-panel p-4">
-            <span className="block font-display text-3xl font-extrabold text-ball">
+            <span className="block font-display text-3xl font-extrabold text-ink">
               {counts.conversions}
             </span>
             <span className="mt-1 block font-mono text-[11px] uppercase tracking-wide text-muted">
@@ -158,9 +158,7 @@ export default async function MemberPage({
               {assistHistory.map((e) => (
                 <li key={e.id} className="flex items-baseline gap-3 px-4 py-2.5">
                   <span
-                    className={`shrink-0 font-mono text-xs ${
-                      e.kind === "assist_converted" ? "text-ball" : "text-posted"
-                    }`}
+                    className="shrink-0 font-mono text-xs text-posted"
                   >
                     ●
                   </span>
@@ -171,7 +169,7 @@ export default async function MemberPage({
                     {e.projectId && (
                       <Link
                         href={`/projects/${e.projectId}`}
-                        className="text-faint hover:text-ball"
+                        className="text-faint hover:text-muted"
                       >
                         {" "}
                         in {e.projectName}

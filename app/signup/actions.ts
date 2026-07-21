@@ -15,7 +15,15 @@ export async function registerAction(formData: FormData) {
     .trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!name || !email || password.length < 8) {
+  // Length plus at least one letter and one digit: keeps "12345678" and
+  // "password" out without a composition gauntlet nobody remembers.
+  if (
+    !name ||
+    !email ||
+    password.length < 8 ||
+    !/[a-zA-Z]/.test(password) ||
+    !/[0-9]/.test(password)
+  ) {
     redirect("/signup?error=invalid");
   }
 

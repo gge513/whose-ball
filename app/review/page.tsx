@@ -35,7 +35,7 @@ export default async function ReviewPage() {
           </p>
           <Link
             href="/signin"
-            className="mt-4 inline-block rounded bg-ball px-4 py-2 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+            className="mt-4 inline-block rounded bg-ink px-4 py-2 font-mono text-sm font-bold text-court hover:bg-white"
           >
             sign in
           </Link>
@@ -119,7 +119,7 @@ export default async function ReviewPage() {
         <section className="mt-6 rounded border border-line bg-panel p-5">
           <div className="flex flex-wrap items-center gap-6">
             <div>
-              <span className="font-display text-3xl font-extrabold text-ball">
+              <span className="font-display text-3xl font-extrabold text-ink">
                 {filed}
               </span>
               <span className="font-display text-xl text-muted">
@@ -131,7 +131,7 @@ export default async function ReviewPage() {
             </div>
             <div className="h-2 min-w-40 flex-1 overflow-hidden rounded-full bg-panel-2">
               <div
-                className="h-full rounded-full bg-ball transition-all"
+                className="h-full rounded-full bg-posted transition-all"
                 style={{
                   width: `${required ? Math.round((filed / required) * 100) : 0}%`,
                 }}
@@ -175,7 +175,7 @@ export default async function ReviewPage() {
                     </span>
                     {isDeep && (
                       <span
-                        className="rounded border border-ball/50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-ball"
+                        className="rounded border border-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted"
                         title="One of your three assigned deep reviews: 300+ words, full rubric"
                       >
                         deep review
@@ -219,7 +219,7 @@ export default async function ReviewPage() {
                           href={review.issueUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-ball hover:underline"
+                          className="text-ink underline"
                         >
                           {review.issueUrl.replace("https://github.com/", "")}
                         </a>
@@ -231,11 +231,11 @@ export default async function ReviewPage() {
                             name="issueUrl"
                             required
                             placeholder={`paste your "Review by @" issue URL from their repo`}
-                            className="min-w-72 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+                            className="min-w-72 flex-1 rounded border border-line bg-panel-2 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-muted focus:outline-none"
                           />
                           <button
                             type="submit"
-                            className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+                            className="rounded bg-ink px-3 py-2 font-mono text-xs font-bold text-court hover:bg-white"
                           >
                             file review
                           </button>
@@ -244,7 +244,7 @@ export default async function ReviewPage() {
                           <button
                             type="submit"
                             title="Scan their repo for an issue titled Review by @you"
-                            className="rounded border border-line px-3 py-2 font-mono text-xs text-muted hover:border-ball hover:text-ink"
+                            className="rounded border border-line px-3 py-2 font-mono text-xs text-muted hover:border-muted hover:text-ink"
                           >
                             detect from GitHub
                           </button>
@@ -263,8 +263,8 @@ export default async function ReviewPage() {
                             type="submit"
                             className={`rounded border px-3 py-2 font-mono text-sm transition-colors ${
                               vote?.thumbsUp === true
-                                ? "border-ball bg-ball/15 text-ball"
-                                : "border-line text-muted hover:border-ball hover:text-ink"
+                                ? "border-posted bg-posted/15 text-posted"
+                                : "border-line text-muted hover:border-muted hover:text-ink"
                             }`}
                             title="tracks your official Vote: up — the vote of record is the line in your review issue"
                           >

@@ -21,7 +21,7 @@ export default async function SignupPage({
         </h1>
         <p className="mt-1 font-mono text-xs text-muted">
           open registration — or use{" "}
-          <Link href="/signin" className="text-ball hover:underline">
+          <Link href="/signin" className="text-ink underline">
             GitHub sign-in
           </Link>{" "}
           instead
@@ -37,7 +37,8 @@ export default async function SignupPage({
         )}
         {error === "invalid" && (
           <p className="mt-4 rounded border border-amber/40 bg-panel px-3 py-2 font-mono text-xs text-amber">
-            Name, email, and a password of at least 8 characters, please.
+            Name, email, and a password of at least 8 characters including a
+            letter and a number, please.
           </p>
         )}
 
@@ -46,26 +47,28 @@ export default async function SignupPage({
             name="name"
             required
             placeholder="name"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
           />
           <input
             name="email"
             type="email"
             required
             placeholder="email"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
           />
           <input
             name="password"
             type="password"
             required
             minLength={8}
-            placeholder="password (8+ characters)"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+            pattern="(?=.*[A-Za-z])(?=.*[0-9]).*"
+            title="At least 8 characters, with a letter and a number"
+            placeholder="password (8+ characters, letter + number)"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
           />
           <button
             type="submit"
-            className="w-full rounded bg-ball px-3 py-2 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+            className="w-full rounded bg-ink px-3 py-2 font-mono text-sm font-bold text-court hover:bg-white"
           >
             create account
           </button>

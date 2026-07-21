@@ -104,7 +104,7 @@ export default async function TasksPage({
           </select>
           <button
             type="submit"
-            className="rounded bg-ball px-3 py-2 font-mono text-xs font-bold text-court hover:bg-ball-deep"
+            className="rounded border border-line px-3 py-2 font-mono text-xs text-ink hover:border-muted"
           >
             filter
           </button>
@@ -131,7 +131,7 @@ export default async function TasksPage({
               >
                 <Link
                   href={`/projects/${t.projectId}`}
-                  className="font-mono text-sm text-ink hover:text-ball"
+                  className="font-mono text-sm text-ink hover:underline"
                 >
                   {t.title}
                 </Link>
@@ -153,7 +153,7 @@ export default async function TasksPage({
                         ? "text-posted"
                         : t.status === "blocked"
                           ? "text-amber"
-                          : "text-ball"
+                          : "text-ink"
                     }
                   >
                     {t.status}

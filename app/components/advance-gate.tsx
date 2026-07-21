@@ -133,8 +133,8 @@ export function AdvanceGate({
               }}
               className={`rounded border px-2 py-1 font-mono text-[11px] transition-colors ${
                 armed === "advance"
-                  ? "border-ball text-ball"
-                  : "border-line text-muted hover:border-ball hover:text-ink"
+                  ? "border-ink text-ink"
+                  : "border-line text-muted hover:border-muted hover:text-ink"
               }`}
             >
               {armed === "advance"
@@ -171,7 +171,7 @@ export function AdvanceGate({
           <a
             href="#define-panel"
             onClick={() => setCall(null)}
-            className="mt-2 inline-block font-mono text-[11px] normal-case tracking-normal text-muted hover:text-ball"
+            className="mt-2 inline-block font-mono text-[11px] normal-case tracking-normal text-muted hover:text-ink"
           >
             answer them below ↓
           </a>

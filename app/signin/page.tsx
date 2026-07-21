@@ -32,18 +32,18 @@ export default async function SigninPage({
             type="email"
             required
             placeholder="email"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
           />
           <input
             name="password"
             type="password"
             required
             placeholder="password"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-ball focus:outline-none"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink placeholder:text-faint focus:border-muted focus:outline-none"
           />
           <button
             type="submit"
-            className="w-full rounded bg-ball px-3 py-2 font-mono text-sm font-bold text-court hover:bg-ball-deep"
+            className="w-full rounded bg-ink px-3 py-2 font-mono text-sm font-bold text-court hover:bg-white"
           >
             sign in
           </button>
@@ -58,7 +58,7 @@ export default async function SigninPage({
         <form action={githubSignInAction}>
           <button
             type="submit"
-            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink hover:border-ball"
+            className="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-sm text-ink hover:border-muted"
           >
             sign in with GitHub
           </button>
@@ -66,7 +66,7 @@ export default async function SigninPage({
 
         <p className="mt-5 font-mono text-xs text-muted">
           No account?{" "}
-          <Link href="/signup" className="text-ball hover:underline">
+          <Link href="/signup" className="text-ink underline">
             Create one
           </Link>
         </p>

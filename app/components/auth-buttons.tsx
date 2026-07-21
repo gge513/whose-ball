@@ -36,9 +36,9 @@ export async function AuthButtons() {
     >
       <button
         type="submit"
-        className="group flex items-center gap-2 rounded-md border border-line bg-panel px-3.5 py-1.5 font-mono text-xs font-medium text-ink transition-colors hover:border-ball"
+        className="flex items-center gap-2 rounded-md border border-line bg-panel px-3.5 py-1.5 font-mono text-xs font-medium text-ink transition-colors hover:border-muted"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-ball transition-shadow group-hover:shadow-[0_0_8px_1px_rgba(200,245,34,0.6)]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted" />
         sign in with GitHub
       </button>
     </form>
